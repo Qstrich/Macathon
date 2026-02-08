@@ -203,7 +203,7 @@ Return the BEST URL that matches the CORRECT location and will lead to actual me
 
         try:
             response = self.client.models.generate_content(
-                model='gemini-2.0-flash',
+                model='gemini-2.5-flash',
                 contents=prompt,
                 config={
                     'response_mime_type': 'application/json',

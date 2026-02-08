@@ -1,0 +1,19 @@
+# Core Dependencies
+python-dotenv
+pydantic
+
+# Google AI SDK (New 2025 Unified SDK)
+google-genai
+
+# Search
+duckduckgo-search
+
+# Web Crawling (Async)
+crawl4ai
+
+# PDF Processing
+docling
+
+# Additional utilities
+aiohttp
+beautifulsoup4

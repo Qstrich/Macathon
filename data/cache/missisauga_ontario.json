@@ -1,0 +1,36 @@
+{
+  "city": "missisauga, ontario",
+  "metadata": {},
+  "motions": [
+    {
+      "id": "BC-0009-2026",
+      "title": "Approval of Long-Range Financial Planning Strategy",
+      "summary": "This strategy sets the financial course for the city for future years, influencing how services are funded and how residents' taxes are managed.",
+      "status": "PASSED",
+      "category": "budget",
+      "impact_tags": [
+        "financial planning",
+        "city services",
+        "taxes",
+        "long-term vision"
+      ],
+      "full_text": "That the Long-Range Financial Planning Strategy attached as Appendix 1 in the report from the Commissioner of Corporate Services, Chief Financial Officer and Treasurer, entitled 'LongRange Financial Planning Strategy', dated December 8, 2025, be approved."
+    },
+    {
+      "id": "BC-0010-2026",
+      "title": "Approval of 2026 Budgets for Business Improvement Areas (BIAs)",
+      "summary": "This decision allocates funds to local business districts in Clarkson, Malton, Port Credit, Cooksville, and Streetsville, supporting their initiatives and local economies.",
+      "status": "PASSED",
+      "category": "budget",
+      "impact_tags": [
+        "local business",
+        "economic development",
+        "community improvement",
+        "by-laws"
+      ],
+      "full_text": "1. That the 2026 budget submissions for the Clarkson, Malton, Port Credit, Cooksville, and Streetsville Business Improvement Areas (BIA's), as set out in Appendix 1 of the Corporate Report dated November 28, 2025, from the Commissioner of Corporate Services, Chief Financial Officer and Treasurer, entitled, '2026 Business Improvement Area Budgets', be approved;\n2. That all necessary By-laws be enacted and that the necessary budget adjustments be made."
+    }
+  ],
+  "markdownFile": "data\\missisauga_20260208_024236.md",
+  "cached_at": "2026-02-08T07:42:46.461Z"
+}

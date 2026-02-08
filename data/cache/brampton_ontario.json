@@ -1,0 +1,51 @@
+{
+  "city": "Brampton, Ontario",
+  "metadata": {},
+  "motions": [
+    {
+      "id": 1,
+      "title": "Increase in Bylaw Enforcement Staff and Equipment",
+      "summary": "Brampton is investing over $1.8 million to hire 40 new bylaw enforcement and property standards staff and purchase new vehicles and technology, aiming to improve enforcement services for residents.",
+      "status": "PASSED",
+      "category": "services",
+      "impact_tags": [
+        "bylaw enforcement",
+        "property standards",
+        "public safety",
+        "city staffing",
+        "budget"
+      ],
+      "full_text": "1. That the report from Robert Higgs, Director, Enforcement and Bylaw Services, Legislative Services, to the Committee of Council Meeting of June 5, 2024, re: Enforcement Operational Review Implementation Plan, be received;\n\n2. That Council approve, twenty-six (26) full-time, permanent complement consisting of seventeen (17) Enforcement Officers, five (5) Property Standards Officers, one (1) Training Supervisor, one (1) Escalation and Communications Supervisor, one (1) Analyst and one (1) Zoning Plans Examiner, and fourteen (14) part-time, permanent Enforcement Officers, to be hired in 2024 with a net annual operating cost of approximately $1,735,103;\n\n3. That a budget amendment be approved and a new capital project be established in the amount of $744,000 for twelve (12) compact pickup trucks, with funding to be transferred from Reserve Fund #4 - Asset Replacement; and\n\n4. That a budget amendment be approved and a new capital project be established in the amount of $70,000 for technology equipment required for new staff, with funding to be transferred from Reserve Fund #4 - Asset Replacement."
+    },
+    {
+      "id": 2,
+      "title": "Investigate Feasibility of Community Hackathon for Local Challenges",
+      "summary": "City staff will explore organizing a hackathon to bring together residents, students, and businesses to develop innovative solutions for pressing local community challenges.",
+      "status": "PASSED",
+      "category": "other",
+      "impact_tags": [
+        "community engagement",
+        "innovation",
+        "economic development",
+        "problem-solving"
+      ],
+      "full_text": "Whereas hackathons are events that bring together diverse groups of individuals to collaborate intensively on innovative projects over a short period of time; and\n\nWhereas hackathons have a proven track record of spurring innovation and entrepreneurship by providing a platform for creative problem-solving, rapid prototyping, and the development of new technologies and solutions; and\n\nWhereas the organization of a hackathon can engage the local community, including students, professionals, and entrepreneurs, fostering a spirit of collaboration and civic engagement; and\n\nWhereas hackathons have the potential to address pressing local challenges by leveraging the collective intelligence and creativity of participants to generate practical and innovative solutions; and\n\nWhereas the successful implementation of solutions developed during hackathons can lead to economic growth by creating new business opportunities, attracting investments, and generating employment; and\n\nWhereas hackathons can also serve as a catalyst for establishing or strengthening partnerships between local government, businesses, educational institutions, and non-profit organizations; and\n\nWhereas the City of Brampton has a history of supporting community-led hackathons, demonstrating a commitment to fostering innovation and collaboration within our community;\n\nTherefore Be It Resolved that Council directs Economic Development staff to investigate the feasibility of organizing a hackathon aimed at addressing local challenges within our community; and\n\nBe It Further Resolved that staff consider the following elements in their investigation:\n\n1. Identification of key local challenges that could be addressed through a hackathon.\n\n2. Potential partners and sponsors from the private sector, educational institutions, and non-profit organizations.\n\n3. Possible venues, dates, and formats for the hackathon.\n4. Budgetary requirements.\n\n5. Strategies for promoting the hackathon to ensure broad and diverse participation.\n\n6. Mechanisms for supporting the development and implementation of viable solutions post-hackathon."
+    },
+    {
+      "id": 3,
+      "title": "Approval of Corporate Strategic Plan 2024 with Enhanced Library Integration",
+      "summary": "Council approved the City of Brampton's 2024 Corporate Strategic Plan, adding a key initiative to enhance integrated planning between the City and Brampton Library for more complete communities.",
+      "status": "AMENDED",
+      "category": "governance",
+      "impact_tags": [
+        "strategic planning",
+        "community development",
+        "library services",
+        "city services"
+      ],
+      "full_text": "1. That the presentation and report from Vincent Rodo, Director, Organizational Performance and Equity, Diversity and Inclusion, Corporate Support Services, to the Committee of Council Meeting of June 5, 2024, re: City of Brampton Corporate Strategic Plan 2024, be received;\n\n2. That the City of Brampton Corporate Strategic Plan 2024 be amended to add the following bullet to page 39 of the Corporate Strategic Plan under the Initiative 'Manage Growth to Support Complete Communities':\n'- Enhanced Integrated Planning between the City and Brampton Library'\n3. That the City of Brampton Corporate Strategic Plan 2024 (the 'Plan') be approved by Council; and\n4. That staff be directed to implement the Plan through execution of departmental work plans and annual budgeting processes;"
+    }
+  ],
+  "markdownFile": "data/brampton_ontario_20260208_023643.md",
+  "cached_at": "2026-02-08T07:39:59.868Z"
+}

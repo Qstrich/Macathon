@@ -1,0 +1,49 @@
+{
+  "city": "London, Ontario",
+  "metadata": {},
+  "motions": [
+    {
+      "id": 1,
+      "title": "Approve Expropriation for Wellington Gateway Project Civil Works Phase 2",
+      "summary": "This decision allows the city to acquire specific private lands needed for the Wellington Gateway transportation project, potentially impacting property owners along Wellington Road.",
+      "status": "PASSED",
+      "category": "transportation",
+      "impact_tags": [
+        "land acquisition",
+        "infrastructure",
+        "property owners"
+      ],
+      "full_text": "That, on the recommendation of the Deputy City Manager, Environment and Infrastructure, with the concurrence of the Director, Construction and Infrastructure Services, on the advice of the Director, Realty Services, the following actions be taken with respect to the expropriation of lands as may be required for the project known as Wellington Gateway Project: - a) the Council of The Corporation of the City of London as Approving Authority pursuant to the Expropriations Act , R.S.O. 1990, c. E.26, as amended, HEREBY APPROVES the proposed expropriation of lands, as described in Schedule 'A', as appended to the staff report dated January 20, 2026, in the City of London, County of Middlesex, it being noted that the reasons for making this decision are as follows: - i) the subject lands are required by The Corporation of the City of London for the Wellington Gateway Project. 3. ii) the design of the project will address the current and future transportation demands along the corridor; and, 4. iii) the design is in accordance with the Municipal Class Environmental Assessment Study recommendations for the Wellington Gateway Project approved by Municipal Council at the meeting held on May 21, 2019; and - b) subject to the approval of a) above, a certificate of approval BE ISSUED by the City Clerk on behalf of the Approving Authority in the prescribed form; - c) it being noted that requests for a Hearing of Necessity have been received for the properties listed below: - 300 Wellington Rd (Request by owner) - 385 Wellington Rd (Request by owner) - 387-395 Wellington Rd (Request by owner and Request by tenant)."
+    },
+    {
+      "id": 2,
+      "title": "Authorize By-law and Steps for Wellington Gateway Land Expropriation",
+      "summary": "This action enables the city to legally proceed with land expropriation for the Wellington Gateway Project by introducing a specific by-law and beginning the formal process of registering and serving notices for the affected properties.",
+      "status": "PASSED",
+      "category": "transportation",
+      "impact_tags": [
+        "land acquisition",
+        "infrastructure",
+        "legal",
+        "property owners"
+      ],
+      "full_text": "That, on the recommendation of the Deputy City Manager, Environment and Infrastructure, with the concurrence of the Director, Construction and Infrastructure Services, on the advice of the Director, Realty Services, with respect to the expropriation of lands as may be required for the project known as the Wellington Gateway Project, the following actions be taken: a) the proposed by-law as appended to the staff report dated January 20, 2026 as Appendix 'A' being 'A by-law to expropriate lands in the City of London, in the County of Middlesex, the Wellington Gateway Project BE INTRODUCED at the Municipal Council meeting to be held on January 20, 2026; b) the Civic Administration BE DIRECTED to take all necessary steps to prepare a plan or plans showing the Expropriated Lands and to register such plan or plans in the appropriate registry or land titles office, pursuant to the Expropriations Act, R.S.O. 1990, c. E.26, within three (3) months of the Approving Authority granting approval of the said expropriation; c) the Mayor and the City Clerk BE AUTHORIZED to sign on behalf of the Expropriating Authority, the plan or plans as signed by an Ontario Land Surveyor showing the Expropriated Lands; and d) the City Clerk BE AUTHORIZED AND DIRECTED to execute and serve the notices of expropriation required by the Expropriations Act , R.S.O. 1990, c. E.26 and such notices of possession that may be required to obtain possession of the Expropriated Lands."
+    },
+    {
+      "id": 3,
+      "title": "Halt Redevelopment Plans for City Parking Lots at 84 Horton and 199 Ridout",
+      "summary": "This decision stops the city's plan to solicit proposals for redeveloping two city-owned parking lots into high-density housing, meaning these specific sites will not be pursued for residential development with public parking at this time.",
+      "status": "PASSED",
+      "category": "housing",
+      "impact_tags": [
+        "development",
+        "housing affordability",
+        "parking",
+        "land use"
+      ],
+      "full_text": "That the following actions be taken with respect to the Mayoral Direction 2024-001, the City-owned Parking Lot Redevelopment update relating to 199 Ridout Street and 84 Horton Street: a)    on the recommendation of the Deputy City Manager, Housing and Community Growth, with respect to the Mayoral Direction 2024-001, the City-owned Parking Lot Redevelopment update relating to 199 Ridout Street and 84 Horton Street provided in the report BE RECEIVED; and b)    the Civic Administration BE DIRECTED to take no further action on a procurement process to solicit development proposals from qualified firms that can redevelop City-owned parking lots for high-density housing, encouraging modular construction techniques, and public parking at the following locations: - i)    84 Horton Street; and 2. ii)   199 Ridout Street."
+    }
+  ],
+  "markdownFile": "data/london_20260208_015917.md",
+  "cached_at": "2026-02-08T07:12:38.519Z"
+}

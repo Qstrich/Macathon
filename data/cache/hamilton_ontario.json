@@ -1,0 +1,38 @@
+{
+  "city": "Hamilton, Ontario",
+  "metadata": {},
+  "motions": [
+    {
+      "id": 1,
+      "title": "Approve Public Works Committee Recommendations including Water & Sewer Bylaw Exemptions",
+      "summary": "Council approved recommendations from the Public Works Committee, which included approving exemptions to waterworks and sewer & drain bylaws, potentially impacting property development and related services across the city.",
+      "status": "PASSED",
+      "category": "development",
+      "impact_tags": [
+        "bylaws",
+        "water services",
+        "wastewater services",
+        "property development",
+        "construction"
+      ],
+      "full_text": "That PWC 25-013, being the minutes of the Public Works Committee meeting held on Monday, November 10, 2025 (Item 7.3), be received and the recommendations contained therein be approved; and That the following correspondence item, be received: Correspondence from Anthony Salemi, Planner, Policy and Government Relations, West End Home Builders' Association respecting Minute Item 9.3, Report PW25063, Waterworks and Sewer &amp; Drains By-laws Exemptions (City Wide) (Item 7.3 (a))."
+    },
+    {
+      "id": 2,
+      "title": "Allocate $1.5M for City-led Climate Change Initiatives",
+      "summary": "The City Council approved the allocation of $1,514,305 from the Climate Change Reserve to fund seven city-led initiatives aimed at promoting environmental sustainability and mitigating climate change impacts across Hamilton.",
+      "status": "PASSED",
+      "category": "environment",
+      "impact_tags": [
+        "climate action",
+        "sustainability",
+        "environmental funding",
+        "city projects",
+        "greenhouse gas reduction"
+      ],
+      "full_text": "That Report PED25240, dated November 12, 2025, respecting 2025 City-Led Projects Recommended for Climate Change Reserve Funding (City Wide) and the accompanying presentation, be received and the following recommendations be approved: (a) That the recommendation to allocate funds in the total amount of $1,514,305 million dollars in 2025 from the City's Climate Change Reserve (Account No 108062) in order to support seven City-led climate action initiatives, BE APPROVED; (b) That the update regarding Planning and Economic Development General Manager approved 2025 Climate Change Reserve funding allocations for Office of Climate Change Initiatives priority efforts BE RECEIVED; and, (c) That the update regarding progress with implementation of City-led and community-led initiatives that received support from the City's Climate Change Reserve in 2023 and 2024 BE RECEIVED."
+    }
+  ],
+  "markdownFile": "data/hamilton_ontario_20260208_022449.md",
+  "cached_at": "2026-02-08T07:26:35.212Z"
+}

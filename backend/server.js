@@ -28,32 +28,36 @@ if (!process.env.GOOGLE_API_KEY) {
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-// Check if cached data exists for a city
+// Check if cached data exists for a city (fuzzy matching)
 async function checkCache(city) {
   try {
-    const cacheDir = path.join(__dirname, 'cache');
+    const cacheDir = path.join(__dirname, '..', 'data', 'cache');
+    const fsSync = require('fs');
     
-    // Normalize city name to match cache filename
-    const citySlug = city.toLowerCase()
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
+    if (!fsSync.existsSync(cacheDir)) return null;
     
-    const cacheFile = path.join(cacheDir, `${citySlug}.json`);
-    
-    // Check if cache file exists
-    try {
-      await fs.access(cacheFile);
-    } catch {
-      return null; // Cache file doesn't exist
+    // Strategy 1: Exact key match
+    const citySlug = cityToCacheKey(city);
+    const exactFile = path.join(cacheDir, `${citySlug}.json`);
+    if (fsSync.existsSync(exactFile)) {
+      return await loadCacheFile(exactFile, city);
     }
     
-    // Read cache file
-    const cacheContent = await fs.readFile(cacheFile, 'utf-8');
-    const cacheData = JSON.parse(cacheContent);
+    // Strategy 2: Fuzzy match - extract city core and find any cache file containing it
+    const cityCore = extractCityCore(city);
+    if (!cityCore) return null;
     
-    console.log(`[CACHE] Found cached data for ${city} (cached at: ${cacheData.cached_at})`);
+    const cacheFiles = fsSync.readdirSync(cacheDir).filter(f => f.endsWith('.json'));
+    for (const file of cacheFiles) {
+      const fileCore = file.replace('.json', '').replace(/_ontario$/, '').replace(/_/g, '');
+      if (fileCore === cityCore || cityCore.startsWith(fileCore) || fileCore.startsWith(cityCore)) {
+        console.log(`[CACHE] Fuzzy match: "${city}" → ${file}`);
+        return await loadCacheFile(path.join(cacheDir, file), city);
+      }
+    }
     
-    return cacheData;
+    console.log(`[CACHE MISS] No cache match for "${city}" (slug: ${citySlug}, core: ${cityCore})`);
+    return null;
     
   } catch (error) {
     console.error('[CACHE ERROR]', error.message);
@@ -61,27 +65,63 @@ async function checkCache(city) {
   }
 }
 
+// Load and validate a cache file
+async function loadCacheFile(filePath, city) {
+  const cacheContent = await fs.readFile(filePath, 'utf-8');
+  const cacheData = JSON.parse(cacheContent);
+  
+  if (!cacheData.motions || cacheData.motions.length === 0) {
+    console.log(`[CACHE] Found cached data for ${city} but it has no motions, ignoring`);
+    return null;
+  }
+  
+  console.log(`[CACHE HIT] ${city} → ${cacheData.motions.length} motions (cached: ${cacheData.cached_at})`);
+  return cacheData;
+}
+
+// Normalize city name into a cache key
+function cityToCacheKey(city) {
+  return city.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+// Extract just the city name part (without province) for fuzzy matching
+function extractCityCore(input) {
+  return input.toLowerCase().trim()
+    .replace(/,?\s*(ontario|on|ont)\.?\s*$/i, '')
+    .replace(/[^a-z]+/g, '')
+    .trim();
+}
+
+// Normalize user input - auto-append ", Ontario" if no province given
+function normalizeCity(city) {
+  const trimmed = city.trim();
+  // Already has Ontario in some form
+  if (/ontario|\bON\b|\bOnt\b/i.test(trimmed)) {
+    // Standardize to "City, Ontario"
+    const core = trimmed.replace(/,?\s*(ontario|on|ont)\.?\s*$/i, '').trim();
+    return core + ', Ontario';
+  }
+  // Just a city name - append Ontario
+  return trimmed + ', Ontario';
+}
+
 // Save data to cache
 async function saveToCache(city, data) {
   try {
-    const cacheDir = path.join(__dirname, 'cache');
-    
-    // Create cache directory if it doesn't exist
-    try {
-      await fs.mkdir(cacheDir, { recursive: true });
-    } catch (error) {
-      // Directory already exists, ignore
+    const cacheDir = path.join(__dirname, '..', 'data', 'cache');
+    const fsSync = require('fs');
+    if (!fsSync.existsSync(cacheDir)) {
+      fsSync.mkdirSync(cacheDir, { recursive: true });
+      console.log(`[CACHE] Created cache directory: ${cacheDir}`);
     }
     
-    // Normalize city name
-    const citySlug = city.toLowerCase()
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    
+    const citySlug = cityToCacheKey(city);
     const cacheFile = path.join(cacheDir, `${citySlug}.json`);
     
-    // Write cache file
     await fs.writeFile(cacheFile, JSON.stringify(data, null, 2));
+    console.log(`[CACHE] Written cache file: ${cacheFile}`);
     
   } catch (error) {
     console.error('[CACHE ERROR] Failed to save cache:', error.message);
@@ -96,11 +136,13 @@ app.post('/api/scrape', async (req, res) => {
     return res.status(400).json({ error: 'City name is required' });
   }
 
-  console.log(`[INFO] Request for: ${city}`);
+  // Normalize city input (auto-append Ontario, standardize format)
+  const normalizedCity = normalizeCity(city);
+  console.log(`[INFO] Request for: "${city}" → normalized: "${normalizedCity}"`);
 
   try {
-    // Step 1: Check cache first
-    const cachedData = await checkCache(city);
+    // Step 1: Check cache first (fuzzy match)
+    const cachedData = await checkCache(normalizedCity);
     if (cachedData) {
       console.log(`[CACHE HIT] Returning cached data for ${city}`);
       return res.json({
@@ -113,12 +155,12 @@ app.post('/api/scrape', async (req, res) => {
     // Step 2: Cache miss - run Python scraper
     console.log('[CACHE MISS] Running Python scraper...');
     const scraperPath = path.join(__dirname, '..');
-    const markdownFile = await runScraper(city, scraperPath);
+    const markdownFile = await runScraper(normalizedCity, scraperPath);
     
     if (!markdownFile) {
       return res.status(500).json({ 
         error: 'Scraper failed to find documents',
-        message: `Could not find council minutes for ${city}`
+        message: `Could not find council minutes for ${normalizedCity}`
       });
     }
 
@@ -133,21 +175,25 @@ app.post('/api/scrape', async (req, res) => {
 
     // Step 3: Extract motions using Gemini
     console.log('[INFO] Extracting motions with Gemini...');
-    const motions = await extractMotions(markdownContent, city);
+    const motions = await extractMotions(markdownContent, normalizedCity);
 
     console.log(`[SUCCESS] Extracted ${motions.length} motions`);
 
-    // Step 4: Save to cache
+    // Step 4: Save to cache (only if we got motions)
     const resultData = {
-      city: city,
+      city: normalizedCity,
       metadata: metadata,
       motions: motions,
       markdownFile: markdownFile,
       cached_at: new Date().toISOString()
     };
     
-    await saveToCache(city, resultData);
-    console.log(`[CACHE] Saved ${city} to cache`);
+    if (motions.length > 0) {
+      await saveToCache(normalizedCity, resultData);
+      console.log(`[CACHE] Saved ${normalizedCity} to cache (${motions.length} motions)`);
+    } else {
+      console.log(`[CACHE] Skipping cache for ${normalizedCity} (no motions)`);
+    }
 
     // Step 5: Return the results
     res.json({

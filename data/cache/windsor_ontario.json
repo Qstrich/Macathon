@@ -1,0 +1,51 @@
+{
+  "city": "Windsor, Ontario",
+  "metadata": {},
+  "motions": [
+    {
+      "id": 1,
+      "title": "Approval of EMS facility lease extension and amendment",
+      "summary": "Extends and amends the lease for the Essex-Windsor EMS facility, ensuring the continued operation and storage of resources vital for emergency services.",
+      "status": "PASSED",
+      "category": "services",
+      "impact_tags": [
+        "emergency services",
+        "infrastructure",
+        "lease agreement"
+      ],
+      "full_text": "That the Lease Amendment and Extension, pertaining to the property municipally know as 400 Erie Street East, Windsor be approved and that Essex Council adopt By-Law #43-2019 authorizing the Warden and the Clerk to execute the agreement on behalf of the Corporation of the County of Essex."
+    },
+    {
+      "id": 2,
+      "title": "Authorize land acquisition for County Road 11 and South Talbot roundabout",
+      "summary": "Approves the acquisition of lands, including through expropriation if needed, for the construction of a new roundabout at a key intersection to improve traffic flow and safety for commuters.",
+      "status": "PASSED",
+      "category": "transportation",
+      "impact_tags": [
+        "road safety",
+        "traffic management",
+        "infrastructure",
+        "land acquisition",
+        "expropriation"
+      ],
+      "full_text": "That Essex County Council adopt By-Law Number 41-2019 authorizing Administration to commence the Expropriation Process to acquire lands required to undertake the reconstruction of the intersection of County Road 11 (Walker Road) and South Talbot with a roundabout, which lands required are identified as Parts 1, 2, 3, 5, 6, 7 and 8; And further that Council adopt By-Law Number 42-2019, authorizing Administration to proceed with the Agreement of Purchase and Sale of lands for the three (3) parcels."
+    },
+    {
+      "id": 3,
+      "title": "Waive repayment for Southwestern Integrated Fibre Technology (SWIFT) project",
+      "summary": "Council agrees to forgo a potential refund from the SWIFT project, reinforcing its financial commitment to expanding high-speed internet infrastructure in rural areas for residents and businesses.",
+      "status": "PASSED",
+      "category": "services",
+      "impact_tags": [
+        "internet access",
+        "rural development",
+        "broadband",
+        "infrastructure",
+        "funding"
+      ],
+      "full_text": "That County Council waive its right to repayment of its SWIFT refundable allocation as set forth Appendix A of Report Number 2019-1016-ADM-R016-RM."
+    }
+  ],
+  "markdownFile": "data/windsor_ontario_20260208_023857.md",
+  "cached_at": "2026-02-08T07:40:42.597Z"
+}

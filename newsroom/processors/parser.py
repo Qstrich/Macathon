@@ -3,11 +3,34 @@ PDF Parser - Convert council meeting PDFs or HTML to Markdown.
 """
 
 import aiohttp
+import json
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, List
 from docling.document_converter import DocumentConverter
 from bs4 import BeautifulSoup
+from pydantic import BaseModel, Field
+
+
+class Motion(BaseModel):
+    """Represents a single motion or decision from a council meeting."""
+    id: int = Field(description="Unique motion number")
+    title: str = Field(description="Short, plain-language title (max 80 chars)")
+    summary: str = Field(description="One-sentence summary for residents")
+    status: str = Field(description="PASSED, FAILED, DEFERRED, or AMENDED")
+    vote: Optional[Dict[str, int]] = Field(default=None, description="Vote breakdown: {for, against, abstain}")
+    category: str = Field(description="Category: parking, housing, budget, environment, etc.")
+    impact_tags: List[str] = Field(default_factory=list, description="Who/what this affects")
+    full_text: Optional[str] = Field(default=None, description="Complete motion text")
+
+
+class MeetingData(BaseModel):
+    """Complete meeting data with extracted motions."""
+    city: str = Field(description="City name")
+    meeting_date: str = Field(description="Date of meeting")
+    source_url: str = Field(description="Original source URL")
+    processed_date: str = Field(description="When this was processed")
+    motions: List[Motion] = Field(description="List of motions/decisions")
 
 
 class PDFParser:
@@ -81,41 +104,112 @@ class PDFParser:
             print(f"   Downloading PDF from: {pdf_url}")
             pdf_bytes = await self._download_pdf(pdf_url, source_url)
             
-            # Save PDF temporarily
-            temp_pdf = self.output_dir / "temp_download.pdf"
-            temp_pdf.write_bytes(pdf_bytes)
+            # Step 1.5: Validate it's actually a PDF
+            if not self._is_valid_pdf(pdf_bytes):
+                print(f"   Downloaded file is not a valid PDF, treating as HTML...")
+                # Decode as HTML and extract content
+                try:
+                    html_content = pdf_bytes.decode('utf-8', errors='ignore')
+                    markdown_content = self._html_to_markdown(html_content)
+                    if not markdown_content or len(markdown_content) < 100:
+                        raise Exception("Extracted HTML content is too short or empty")
+                except Exception as e:
+                    raise Exception(f"File is not a PDF and HTML extraction failed: {e}")
+            else:
+                # Save PDF temporarily
+                temp_pdf = self.output_dir / "temp_download.pdf"
+                temp_pdf.write_bytes(pdf_bytes)
+                
+                try:
+                    # Step 2: Convert PDF to Markdown using Docling with error handling
+                    print("   Converting PDF to Markdown...")
+                    try:
+                        result = self.converter.convert(str(temp_pdf))
+                        markdown_content = result.document.export_to_markdown()
+                    except Exception as docling_error:
+                        print(f"   Docling parsing failed: {docling_error}")
+                        print(f"   Attempting HTML extraction fallback...")
+                        
+                        # Try to extract as HTML instead
+                        try:
+                            html_content = pdf_bytes.decode('utf-8', errors='ignore')
+                            markdown_content = self._html_to_markdown(html_content)
+                            if not markdown_content or len(markdown_content) < 100:
+                                raise Exception("HTML extraction produced insufficient content")
+                        except Exception as html_error:
+                            raise Exception(f"Both PDF parsing and HTML extraction failed. PDF error: {docling_error}, HTML error: {html_error}")
+                except:
+                    # Clean up temp file before re-raising
+                    if temp_pdf.exists():
+                        temp_pdf.unlink()
+                    raise
+                
+            # Step 3: Create YAML frontmatter
+            frontmatter = self._create_frontmatter(
+                city_name=city_name,
+                source_url=source_url,
+                pdf_url=pdf_url,
+                meeting_date=meeting_date,
+                content_type="PDF"
+            )
             
+            # Step 4: Combine frontmatter and content
+            full_content = f"{frontmatter}\n\n{markdown_content}"
+            
+            # Step 5: Save to output file
+            output_filename = self._generate_filename(city_name, meeting_date)
+            output_path = self.output_dir / output_filename
+            output_path.write_text(full_content, encoding='utf-8')
+            
+            print(f"   Saved to: {output_path}")
+            
+            # Clean up temporary PDF if it exists
             try:
-                # Step 2: Convert PDF to Markdown using Docling
-                print("   Converting PDF to Markdown...")
-                result = self.converter.convert(str(temp_pdf))
-                markdown_content = result.document.export_to_markdown()
-                
-                # Step 3: Create YAML frontmatter
-                frontmatter = self._create_frontmatter(
-                    city_name=city_name,
-                    source_url=source_url,
-                    pdf_url=pdf_url,
-                    meeting_date=meeting_date,
-                    content_type="PDF"
-                )
-                
-                # Step 4: Combine frontmatter and content
-                full_content = f"{frontmatter}\n\n{markdown_content}"
-                
-                # Step 5: Save to output file
-                output_filename = self._generate_filename(city_name, meeting_date)
-                output_path = self.output_dir / output_filename
-                output_path.write_text(full_content, encoding='utf-8')
-                
-                print(f"   Saved to: {output_path}")
-                
-                return output_path
-                
-            finally:
-                # Clean up temporary PDF
+                temp_pdf = self.output_dir / "temp_download.pdf"
                 if temp_pdf.exists():
                     temp_pdf.unlink()
+            except:
+                pass
+            
+            # Extract motions and save JSON
+            print(f"   Extracting motions with AI...")
+            json_path = await self._extract_and_save_motions(
+                markdown_content=markdown_content,
+                city_name=city_name,
+                meeting_date=meeting_date,
+                source_url=source_url,
+                output_path=output_path
+            )
+            if json_path:
+                print(f"   Motions saved to: {json_path}")
+            
+            return output_path
+    
+    def _is_valid_pdf(self, data: bytes) -> bool:
+        """
+        Check if the downloaded data is actually a PDF file.
+        
+        Args:
+            data: The downloaded file bytes
+        
+        Returns:
+            True if valid PDF, False otherwise
+        """
+        if not data or len(data) < 4:
+            return False
+        
+        # Check PDF magic bytes (PDF files start with %PDF)
+        pdf_header = data[:4]
+        if pdf_header == b'%PDF':
+            return True
+        
+        # Check for common HTML indicators (false positives)
+        html_indicators = [b'<!DOCTYPE', b'<html', b'<HTML', b'<?xml']
+        for indicator in html_indicators:
+            if data[:100].find(indicator) != -1:
+                return False
+        
+        return False
     
     async def _download_pdf(self, url: str, source_url: str = None) -> bytes:
         """

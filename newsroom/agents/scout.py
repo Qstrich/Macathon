@@ -238,6 +238,7 @@ Analyze the search results below and identify the SINGLE BEST URL.
 - Social media (Facebook, Twitter/X).
 - "Committee of Adjustment" or "Police Board" (unless specifically asked for).
 - broken or "404" looking links.
+- Calendars or Event Pages (unless specifically asked for).
 
 ### SEARCH RESULTS TO ANALYZE:
 {results_text}

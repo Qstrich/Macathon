@@ -39,49 +39,57 @@ async def main(city_name: str) -> None:
     print("=" * 60)
     
     try:
-        # Step 1: Scout - Find official government source
-        print("\n[STEP 1] Searching for official council minutes repository...")
-        scout = ScoutAgent()
-        official_source = await scout.find_official_source(city_name)
+        # Add 5-minute timeout to prevent indefinite hangs
+        async with asyncio.timeout(300):  # 300 seconds = 5 minutes
+            # Step 1: Scout - Find official government source
+            print("\n[STEP 1] Searching for official council minutes repository...")
+            scout = ScoutAgent()
+            official_source = await scout.find_official_source(city_name)
         
-        if not official_source:
-            print(f"[ERROR] Could not find official council minutes for {city_name}")
-            sys.exit(1)
-        
-        print(f"[SUCCESS] Found official source: {official_source.url}")
-        print(f"   Reasoning: {official_source.reasoning}")
-        
-        # Step 2: Navigator - Find latest PDF
-        print("\n[STEP 2] Navigating to find latest PDF...")
-        navigator = NavigatorAgent()
-        pdf_info = await navigator.find_latest_pdf(official_source.url)
-        
-        if not pdf_info:
-            print(f"[ERROR] Could not find any PDF documents at {official_source.url}")
-            sys.exit(1)
-        
-        print(f"[SUCCESS] Found PDF: {pdf_info.title}")
-        print(f"   URL: {pdf_info.url}")
-        print(f"   Date: {pdf_info.date or 'Unknown'}")
-        
-        # Step 3: Parser - Download and convert to Markdown
-        content_type = "HTML content" if pdf_info.is_html else "PDF"
-        print(f"\n[STEP 3] Processing {content_type}...")
-        parser = PDFParser()
-        markdown_path = await parser.process_pdf(
-            pdf_url=pdf_info.url,
-            city_name=city_name,
-            source_url=official_source.url,
-            meeting_date=pdf_info.date,
-            is_html=pdf_info.is_html,
-            html_content=pdf_info.html_content
-        )
-        
-        print(f"[SUCCESS] Successfully processed document!")
-        print(f"   Output: {markdown_path}")
+            if not official_source:
+                print(f"[ERROR] Could not find official council minutes for {city_name}")
+                sys.exit(1)
+            
+            print(f"[SUCCESS] Found official source: {official_source.url}")
+            print(f"   Reasoning: {official_source.reasoning}")
+            
+            # Step 2: Navigator - Find latest PDF
+            print("\n[STEP 2] Navigating to find latest PDF...")
+            navigator = NavigatorAgent()
+            pdf_info = await navigator.find_latest_pdf(official_source.url)
+            
+            if not pdf_info:
+                print(f"[ERROR] Could not find any PDF documents at {official_source.url}")
+                sys.exit(1)
+            
+            print(f"[SUCCESS] Found PDF: {pdf_info.title}")
+            print(f"   URL: {pdf_info.url}")
+            print(f"   Date: {pdf_info.date or 'Unknown'}")
+            
+            # Step 3: Parser - Download and convert to Markdown
+            content_type = "HTML content" if pdf_info.is_html else "PDF"
+            print(f"\n[STEP 3] Processing {content_type}...")
+            parser = PDFParser()
+            markdown_path = await parser.process_pdf(
+                pdf_url=pdf_info.url,
+                city_name=city_name,
+                source_url=official_source.url,
+                meeting_date=pdf_info.date,
+                is_html=pdf_info.is_html,
+                html_content=pdf_info.html_content
+            )
+            
+            print(f"[SUCCESS] Successfully processed document!")
+            print(f"   Output: {markdown_path}")
+            print("\n" + "=" * 60)
+            print("CivicSense completed successfully!")
+    
+    except asyncio.TimeoutError:
         print("\n" + "=" * 60)
-        print("CivicSense completed successfully!")
-        
+        print(f"[ERROR] Processing timeout - operation took longer than 5 minutes")
+        print(f"[RESULT] Could not complete processing for {city_name}")
+        print("This may indicate a complex document or system issue.")
+        sys.exit(1)
     except KeyboardInterrupt:
         print("\n[WARNING] Process interrupted by user")
         sys.exit(1)

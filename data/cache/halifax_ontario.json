@@ -1,0 +1,65 @@
+{
+  "city": "halifax, Ontario",
+  "metadata": {},
+  "motions": [
+    {
+      "id": 1,
+      "title": "Defer TNC and taxi bylaw changes, exclude TNC driver licensing",
+      "summary": "Council deferred proposed changes to taxi and ride-share (TNC) regulations, instructing staff to draft new proposals that exclude TNC driver licensing requirements, which impacts how ride-share services are regulated and could affect their availability or cost.",
+      "status": "PASSED",
+      "category": "transportation",
+      "impact_tags": [
+        "ride-share regulation",
+        "taxi services",
+        "driver licensing",
+        "by-law amendment"
+      ],
+      "full_text": "That the matter be deferred to the next meeting of Regional Council and that staff return with amendments to By-law T-1000, T-1008, and Administrative Order 39 that exclude Transportation Network Companies (TNCs) as alternative amendments."
+    },
+    {
+      "id": 2,
+      "title": "Approved 12.5% rate increase for taxis and limousines",
+      "summary": "Council previously approved a 12.5% fare increase for taxi and limousine services, adjusted for HST reduction, directly impacting the cost of these services for residents.",
+      "status": "PASSED",
+      "category": "transportation",
+      "impact_tags": [
+        "taxi fares",
+        "limousine services",
+        "cost of living",
+        "fare increase"
+      ],
+      "full_text": "On June 10, 2025, Halifax Regional Council adopted amendments to Administrative Order 39, the Taxi and Limousine Regulation Administrative Order ('the administrative order'), approving an unblended rate increase to taxi and limousine rates by approximately 12.5%, with an adjustment for the 1% HST rate reduction."
+    },
+    {
+      "id": 3,
+      "title": "Requested staff report on modernizing taxi fare setting",
+      "summary": "Council directed staff to explore options for deregulating taxi and limousine fares, allowing operators more flexibility in setting their own rates, which could lead to changes in pricing and competition for residents.",
+      "status": "PASSED",
+      "category": "transportation",
+      "impact_tags": [
+        "taxi fares",
+        "deregulation",
+        "competition",
+        "economic impact",
+        "staff directive"
+      ],
+      "full_text": "Council asked staff to return to Council with a supplementary report on modernizing how taxi and limousine rates are set by the Municipality, with emphasis on looking at options to de-regulate taxi and limousine rates to allow operators to set their own rates."
+    },
+    {
+      "id": 4,
+      "title": "Requested staff report on aligning TNC driver requirements",
+      "summary": "Council directed staff to propose amendments to By-law T-1000 to align licensing and operational requirements for ride-share (TNC) drivers with those of traditional taxi and limousine drivers, potentially increasing safety standards or regulatory burdens.",
+      "status": "PASSED",
+      "category": "transportation",
+      "impact_tags": [
+        "ride-share regulation",
+        "driver licensing",
+        "safety standards",
+        "staff directive"
+      ],
+      "full_text": "Additionally, Council asked staff to return with a supplementary report, including amendments to By-law T-1000, Respecting the Regulation of Taxis, Accessible Taxis, Limousines and Transportation Network Companies ('the by-law'), to bring the requirements for TNC Drivers in line with the requirements for taxi and limousine drivers."
+    }
+  ],
+  "markdownFile": "data\\halifax_20260208_094155.md",
+  "cached_at": "2026-02-08T14:42:35.563Z"
+}

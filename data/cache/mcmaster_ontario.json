@@ -1,0 +1,99 @@
+{
+  "city": "mcmaster, Ontario",
+  "metadata": {},
+  "motions": [
+    {
+      "id": 1,
+      "title": "Approve WestCreek Area Structure Plan Amendment Bylaw",
+      "summary": "This bylaw officially amends the development plan for the WestCreek area, shaping future land use and development for residents.",
+      "status": "PASSED",
+      "category": "development",
+      "impact_tags": [
+        "urban planning",
+        "land use",
+        "housing development"
+      ],
+      "full_text": "THAT Council give Second Reading to Bylaw No. 25-07, being a Bylaw to amend WestCreek Area Structure Plan No. 08-22. AND THAT Council give Third Reading to Bylaw No. 25-07, being a Bylaw to amend WestCreek Area Structure Plan No. 08-22."
+    },
+    {
+      "id": 2,
+      "title": "Authorize Joint Agreement for 2025 Municipal Election",
+      "summary": "This decision approves an agreement to share election costs and resources with local school divisions for the upcoming 2025 municipal election.",
+      "status": "PASSED",
+      "category": "governance",
+      "impact_tags": [
+        "elections",
+        "public services"
+      ],
+      "full_text": "THAT Council authorizes the Returning Officer to enter into an agreement with the Golden Hills School Division #75 and Christ the Redeemer Catholic Schools for the 2025 municipal election, with costs to be shared as referenced in Attachment I."
+    },
+    {
+      "id": 3,
+      "title": "Initiate Land Annexation from Wheatland County",
+      "summary": "This directs staff to begin the formal process of incorporating land from Wheatland County into the town, potentially expanding town boundaries and services for future residents.",
+      "status": "PASSED",
+      "category": "development",
+      "impact_tags": [
+        "urban planning",
+        "municipal boundaries",
+        "land use"
+      ],
+      "full_text": "THAT Council direct staff to provide written notice of its' proposed annexation pursuant to Section 116 of the Municipal Government Act."
+    },
+    {
+      "id": 4,
+      "title": "Appoint Returning Officer for 2025 Municipal Election",
+      "summary": "This decision confirms the primary and substitute Returning Officers responsible for managing the upcoming 2025 municipal election.",
+      "status": "PASSED",
+      "category": "governance",
+      "impact_tags": [
+        "elections",
+        "public administration"
+      ],
+      "full_text": "THAT Council rescind Resolution No. 355.12.24: 'THAT Council appoint Johnathan Strathdee as the Town of Strathmore's Returning Officer for the 2025 Municipal Election; AND THAT Council appoint Claudette Thorhaug as the Town of Strathmore's Substitute Returning Officer for the 2025 Municipal Election.' THAT Council appoint Vanessa Cunningham as the Town of Strathmore's Returning Officer for the 2025 Municipal Election. THAT Council appoint Claudette Thorhaug as the Town of Strathmore's Substitute Returning Officer for the 2025 Municipal Election."
+    },
+    {
+      "id": 5,
+      "title": "Approve 2025 Property Tax Rate Bylaw with Amendments",
+      "summary": "This officially sets the property tax rates for 2025, including adjustments to school tax rates, directly impacting all property owners in the town.",
+      "status": "AMENDED",
+      "category": "budget",
+      "impact_tags": [
+        "property taxes",
+        "municipal finance",
+        "school taxes",
+        "cost of living"
+      ],
+      "full_text": "THAT Council give First Reading to Bylaw No. 25-11, being the 2025 Property Tax Rate Bylaw. AND THAT Council give Second Reading to Bylaw No. 25-11, being the 2025 Property Tax Rate Bylaw as amended: ·Amend Alberta School Foundation Fund Tax Rates in Section 2 of Bylaw No. 25-11 as follows: - Residential/Farmland Tax Rate to 2.47200 (2.47300 Prior) - Non-Residential Tax Rate to 3.66900 (3.33300 Prior) - Residential (O/C-135/2010) Tax Rate to 2.55330 (2.43200 Prior) - Non-Residential (O/C-135/2010) Tax Rate to 3.6865 (3.67900 Prior) - Farmland (O/C-135/2010) Tax Rate to 2.5533 (2.43200 Prior) - Amend Christ Redeemer Catholic School Division Tax Rates in Section 2 of Bylaw No. 25-11 as follows: - Residential/Farmland Tax Rate 2.47200 (2.43200 Prior) - oNon-Residential Tax Rate to 3.66900 (3.33300 Prior). AND THAT Council give Third Reading to Bylaw No. 25-11, being the 2025 Property Tax Rate Bylaw."
+    },
+    {
+      "id": 6,
+      "title": "First Reading for Land Use Bylaw Amendment on Garden and Garage Suites",
+      "summary": "This motion initiates changes to the Land Use Bylaw by removing regulations for garden and garage suites, and schedules a public hearing for public input on these housing options.",
+      "status": "PASSED",
+      "category": "housing",
+      "impact_tags": [
+        "land use",
+        "housing regulations",
+        "secondary suites",
+        "development"
+      ],
+      "full_text": "THAT Council give First reading to Bylaw No. 25-09, being a bylaw to amend Land Use Bylaw No. 14-11; AND THAT Council direct Administration to schedule a Public Hearing for Bylaw No. 25-09 on June 4, 2025 at 7:00 p.m. in Council Chambers."
+    },
+    {
+      "id": 7,
+      "title": "Proclaim Community Disability Services Professional Appreciation Week",
+      "summary": "This motion declares May 19-25, 2025, as Community Disability Services Professional Appreciation Week, recognizing the important work of those supporting residents with disabilities.",
+      "status": "PASSED",
+      "category": "services",
+      "impact_tags": [
+        "community recognition",
+        "disability support",
+        "social services"
+      ],
+      "full_text": "THAT Council proclaim the week of May 19 - 25, 2025 Community Disability Services Professional Appreciation Week in Strathmore, Alberta."
+    }
+  ],
+  "markdownFile": "data\\mcmaster_20260208_024946.md",
+  "cached_at": "2026-02-08T07:50:20.202Z"
+}

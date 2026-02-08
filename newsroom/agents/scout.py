@@ -57,15 +57,51 @@ class ScoutAgent:
         # Step 1: Try multiple search queries with region specificity
         # Focus on finding actual meeting MINUTES, not bylaws or legislation
         # Prioritize meeting portals (eSCRIBE, TMMIS) for reliable document access
+        # Cleaning the input for better search accuracy
+        city_clean = city_name.lower().replace("city of", "").strip()
+        region_clean = region.lower().strip() if region else ""
+        location_query = f"{city_clean} {region_clean}".strip()
+
         search_queries = [
-            f"{city_name} escribemeetings.com",  # Look for eSCRIBE portal first
-            f"{city_name} secure.toronto.ca council" if 'toronto' in city_name.lower() else None,  # TMMIS for Toronto
-            f"\"{city_only}\" {region} council minutes.pdf 2026" if region else f"{city_only} council minutes.pdf 2026",
-            f"{city_name} \"committee minutes\" filetype:pdf 2026",
-            f"{city_name} \"meeting minutes\" \"approved\" filetype:pdf",
-            f"{city_name} clerk minutes agenda 2026 site:.ca" if region else f"{city_name} clerk minutes 2026"
+            # --- TIER 1: The "Big 3" Vendor Portals (Best Data) ---
+            # These platforms host 80% of municipal data. finding the portal URL is better than finding a single PDF.
+            
+            # eSCRIBE (Common in Canada/US) - usually pub-[city].escribemeetings.com
+            f"site:escribemeetings.com {city_clean} \"council\"",
+            
+            # Granicus / Legistar (Common in large US/Canadian cities)
+            f"site:legistar.com {city_clean}",
+            f"site:granicus.com {city_clean} \"minutes\"",
+
+            # CivicWeb / iCompass (Common in small/mid-sized towns)
+            f"site:civicweb.net {city_clean}",
+            f"site:civicplus.com {city_clean} \"agenda center\"",
+            
+            # --- TIER 2: The "Portal" Hunters (Finding the Landing Page) ---
+            # These look for the page where the list of minutes lives.
+            
+            f"\"{city_clean}\" council \"meeting portal\"",
+            f"\"{city_clean}\" \"agendas and minutes\" portal",
+            f"\"{city_clean}\" \"legislative calendar\" 2026",
+            f"\"{city_clean}\" \"clerk\" \"minutes\" archive",
+
+            # --- TIER 3: Direct File Hunting (The Fallback) ---
+            # Specific keywords that appear INSIDE the minutes PDF, not just the title.
+            
+            # "Regular Council Meeting" is the formal term for the main monthly meeting
+            f"\"{city_clean}\" \"regular council meeting\" minutes filetype:pdf 2026",
+            
+            # "Disposition" is a technical term often used instead of "Minutes" in some jurisdictions
+            f"\"{city_clean}\" council disposition filetype:pdf 2026",
+            
+            # Targeted 'clerk' search (The Clerk is legally responsible for minutes)
+            f"\"{location_query}\" clerk minutes 2026 filetype:pdf"
         ]
-        
+
+        # Regional Specifics (Toronto uses a custom system called TMMIS)
+        if 'toronto' in city_clean:
+            search_queries.insert(0, f"site:toronto.ca \"decision body\" minutes 2026")
+                
         # Add French queries for Quebec cities
         if region and 'quebec' in region.lower():
             search_queries.extend([
@@ -165,45 +201,50 @@ class ScoutAgent:
         city_only = location_parts[0].strip().lower()
         region = location_parts[1].strip().lower() if len(location_parts) > 1 else ""
         
-        prompt = f"""You are a civic tech expert finding municipal meeting documents for {city_name}.
+        prompt = f"""
+You are a Municipal Data Archivist for {city_name}, {region}. 
+Your goal is to identify the OFFICIAL repository where this city publishes its Council Meeting Minutes and Agendas.
 
-CRITICAL: Verify the location matches! The city must be "{city_only}" in "{region}" (Canada).
-REJECT any URLs for cities in other provinces/states or countries.
+Analyze the search results below and identify the SINGLE BEST URL.
 
-Analyze the following URLs and identify the ONE that is most likely to contain RECENT city council agendas or minutes.
+### 1. STRICT LOCATION VERIFICATION (Critical)
+- **Target:** {city_name}, {region} (Canada).
+- **REJECT** any results for:
+  - {city_name} in the USA (e.g., Hamilton OH, London KY).
+  - {city_name} in the UK/Australia.
+  - Counties/Regions with similar names but wrong jurisdiction.
 
-            PRIORITIZE URLs with these signals:
-            1. Location match - URL domain or path contains correct city/region - MANDATORY
-            2. City-specific eSCRIBE portals (e.g., pub-cityname.escribemeetings.com) - HIGHEST PRIORITY
-            3. Toronto TMMIS portal (secure.toronto.ca/council) - HIGHEST PRIORITY for Toronto
-            4. Generic eSCRIBE domains (www.escribemeetings.com) - ONLY if no city-specific portal found
-            5. Direct PDF links to MINUTES or AGENDAS (.pdf extension with "minutes" or "agenda" in filename)
-            6. Current year (2026 or 2025) in URL path or filename
-            7. Keywords in URL: "minutes.pdf", "agenda.pdf", "packet.pdf"
-            8. Meeting document repositories with date-specific PDFs
-            9. City clerk document archives with actual meeting files
-            10. Official Canadian domains (.ca, .on.ca, etc.) if city is in Canada
+### 2. SCORING HIERARCHY (From Best to Worst)
+**TIER 1: The "Gold Mine" (Vendor Portals)**
+*These are dedicated subdomains hosting all documents. PICK THESE FIRST.*
+- **eSCRIBE:** `pub-{city_name.replace(' ', '').lower()}.escribemeetings.com`
+- **CivicWeb:** `{city_name}.civicweb.net`
+- **Granicus/Legistar:** `{city_name}.legistar.com`
+- **Hyland:** `pub-{city_name}.hylandcloud.com`
 
-DEPRIORITIZE (unless no better option):
-- Meeting portals without direct PDF links in the URL
-- Calendar pages
-- Generic "meetings" landing pages
+**TIER 2: The "Library" (Official Landing Pages)**
+*City website pages that list meeting dates.*
+- URLs containing `/council-meetings`, `/agendas-and-minutes`, `/legislative-calendar`.
+- **CORRECTION:** Do NOT reject "Calendar" pages if they are on a government domain. These are often the only way to access documents.
 
-REJECT:
-- Wrong city/province/country (e.g., Hamilton MA vs Hamilton ON)
-- Archived meetings (unless no recent alternative)
-- News articles, press releases, social media
-- Generic pages without meeting documents
-- Committee pages (unless they have documents)
+**TIER 3: Direct Files (Fallback)**
+*Use only if no Portal or Landing Page is found.*
+- Direct links to `.pdf` files.
+- Must contain "minutes" or "agenda" in the URL/Title.
+- Must be dated **2025** or **2026**.
 
-Search Results:
+### 3. NEGATIVE CONSTRAINTS (Ignore These)
+- News articles (CBC, Global News, etc.).
+- Social media (Facebook, Twitter/X).
+- "Committee of Adjustment" or "Police Board" (unless specifically asked for).
+- broken or "404" looking links.
+
+### SEARCH RESULTS TO ANALYZE:
 {results_text}
-
-Return the BEST URL that matches the CORRECT location and will lead to actual meeting documents."""
-
+"""
         try:
             response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-2.0-flash',
                 contents=prompt,
                 config={
                     'response_mime_type': 'application/json',

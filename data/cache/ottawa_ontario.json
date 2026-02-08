@@ -1,76 +1,114 @@
 {
   "city": "Ottawa, Ontario",
-  "metadata": {},
+  "metadata": {
+    "title": "Ottawa, Ontario Council Meeting Information",
+    "city": "Ottawa, Ontario",
+    "meeting_date": "Unknown",
+    "source_url": "https://pub-ottawa.escribemeetings.com/Meeting.aspx?Id=e8ef0df5-8683-47db-889e-e8802da3ea17&Agenda=PostMinutes&lang=English",
+    "document_url": "https://pub-ottawa.escribemeetings.com/filestream.ashx?DocumentId=290580",
+    "content_type": "PDF",
+    "processed_date": "2026-02-08 02:34:11",
+    "generated_by": "CivicSense"
+  },
   "motions": [
     {
       "id": 1,
-      "title": "Adjusted Ottawa Public Library Budget for 2026",
-      "summary": "City Council approved an amendment to correct the funding allocation for the Ottawa Public Library's 2026 operating and capital budgets, with no net impact on the overall city budget.",
-      "status": "AMENDED",
-      "category": "budget",
+      "title": "Public Health Services Budget for 2026 Approved",
+      "summary": "The 2026 operating budget for the Ottawa Board of Health was approved, ensuring continued funding for essential public health programs and services in the city.",
+      "status": "PASSED",
+      "category": "services",
       "impact_tags": [
-        "libraries",
-        "public services",
-        "funding"
+        "health",
+        "public services"
       ],
-      "full_text": "Motion No. 2025-71-04\nMoved by M. Luloff\nSeconded by C. Kitts\nWHEREAS the Ottawa Public Library Board approved the 2026 OPL Draft Operating and Capital Budget on December 2, 2025; and\nWHEREAS the Finance and Corporate Services Committee (FCSC)\napproved the Non-Departmental budget on December 2, 2025; and\nWHEREAS the approved Operating Resource Requirement template for the Ottawa Public Library included the correct total gross and net expenditure, but the misalignment of the municipal revenue resulting in a net requirement of $66.730 million versus the correct net requirement of $69.220 million (an additional $2.490 million); and\nWHEREAS the approved Operating Resource Requirement template for the Finance and Corporate Services Committee Non-Departmental budget included a net requirement of ($2.343 billion) versus the correct net requirement of ($2.345 billion), (an additional ($2.490 million)); and\nWHEREAS the proposed updates will have no net impact on the overall 2026 Draft Operating and Capital Budget;\nTHEREFORE BE IT RESOLVED THAT Council receive and consider the following updated budget templates to increase the OPL net requirement by $2.490 million and to increase the Non-Departmental net requirement by ($2.490 million) to align the funding between the two templates and ensure the approved resource requirements reflect the correct allocations, with no net financial impact to the overall Draft 2026 Operating and Capital Budget:\n- Ottawa Public Library Operating Resource Requirement Template (Revised Page 5 of the Ottawa Public Library Budget Book); and"
+      "full_text": "The 2026 Ottawa Board of Health Draft Operating Budget as recommended by the Ottawa Board of Health; Carried"
     },
     {
       "id": 2,
-      "title": "Approval of 2026 Ottawa Police Service Budget",
-      "summary": "City Council approved the operating and capital budgets for the Ottawa Police Service for 2026, setting funding for public safety and emergency response.",
+      "title": "Library Budgets for 2026 Adopted, Supporting Services and Facilities",
+      "summary": "The Ottawa Public Library's operating and capital budgets for 2026 were approved with a technical accounting adjustment that has no net financial impact. This decision ensures funding for library operations, programs, and facility upgrades for the coming year.",
       "status": "PASSED",
-      "category": "budget",
+      "category": "services",
       "impact_tags": [
-        "public safety",
-        "police services",
-        "taxpayer funding"
+        "library",
+        "education",
+        "community facilities"
       ],
-      "full_text": "The 2026 Ottawa Police Service Draft Operating and Capital Budgets, as recommended by the Ottawa Police Services Board;\nFor (20): M. Sutcliffe, M. Luloff, L. Dudas, D. Hill, C. Curry, C. Kelly, G. Gower, T. Kavanagh, S. Devine, T. Tierney, S. Plante, J. Leiper, R. Brockington, M. Carr, C. Kitts, I. Skalski, D. Brown, S. Desroches, A. Hubley, and W. Lo\nAgainst (5): L. Johnson, J. Bradley, R. King, A. Troster, and S. Menard\nCarried (20 to 5)"
+      "full_text": "The 2026 Ottawa Public Library Board Draft Operating and Capital Budgets as recommended by the Ottawa Public Library Board; Carried as amended"
     },
     {
       "id": 3,
-      "title": "Increased Funding for Core Infrastructure Projects",
-      "summary": "City Council allocated an additional $20 million for critical infrastructure like roads, sidewalks, parks, and recreational facilities, funded by assessment growth, and released parkland funds for recreation.",
+      "title": "Police Service Budget for 2026 Approved by Council",
+      "summary": "Council approved the 2026 operating and capital budgets for the Ottawa Police Service. This decision provides the necessary funding for police operations, staffing, and equipment to maintain public safety.",
       "status": "PASSED",
-      "category": "development",
+      "category": "services",
       "impact_tags": [
-        "infrastructure",
-        "roads",
-        "parks",
-        "recreation",
-        "city development"
+        "public safety",
+        "police",
+        "law enforcement"
       ],
-      "full_text": "Motion No. 2025-71-05\nMoved by L. Dudas Seconded by C. Kitts\nWHEREAS staff were directed to explore and report back to Council with possible solutions on how the City could invest more in core infrastructure within the 2026 budget prior to final adoption; and\nWHEREAS staff have identified an infrastructure funding gap as per the most recent Asset Management Plans approved by Council in 2025, consistent with the experience of municipalities across Canada; and\nWHEREAS this gap covers essential assets such as roads, sidewalks, bridges, recreation facilities, and other municipal infrastructure and the infrastructure backlog will require new funding strategies, including debt financing, and possibly external support to close the gap; and\nWHEREAS staff have begun work on the Tax Long Range Financial Plan (LRFP) to provide funding strategies to address essential infrastructure needs such as roads and recreational facilities and amenities, in which debt financing is a funding strategy to be leveraged; and\nWHEREAS staff will bring forward the Tax LRFP to Committee and Council in the first half of 2026; and\nWHEREAS staff have received the final Municipal Property Assessment Corporation (MPAC) roll return; and\nWHEREAS staff have advised that they have completed a wholesome review of the final MPAC roll return and have confirmed that the City has slightly exceeded the 2026 budget growth target of 1.6% to 1.65% or approximately $1.2 million in additional annual base funding; and\nWHEREAS there are significant Cash-in-lieu of parklands (CILs) funds being held back; and\nWHEREAS Legal Services has assessed the holdback percentage and confirmed that up to fifty per cent of the hold back can be released at this time;\nTHEREFORE, BE IT RESOLVED THAT Council support the release of CILs as identified by Legal Services for the advancement of recreation infrastructure projects; and\nTHEREFORE, BE IT FURTHER RESOLVED THAT Council direct staff to increase the draft 2026 capital budget for Tax supported assets with an additional $20 million debenture in which the annual debt servicing of approximately $1.2 million will be funded from the incremental $1.2 million assessment growth funding; and\nTHEREFORE, IT BE FURTHER RESOLVED THAT staff apply the $20 million capital funding towards core tax supported infrastructure such as roads, sidewalks, parks and recreational facilities."
+      "full_text": "The 2026 Ottawa Police Service Draft Operating and Capital Budgets, as recommended by the Ottawa Police Services Board; Carried (20 to 5)"
     },
     {
       "id": 4,
-      "title": "Approval of Rural Affairs Committee Capital Program",
-      "summary": "City Council approved the 2026 Capital Program for the Agriculture and Rural Affairs Committee, funding specific projects in Ottawa's rural communities.",
+      "title": "City to Invest Additional $20 Million in Roads, Sidewalks, Parks & Recreation",
+      "summary": "Council approved an extra $20 million for core infrastructure projects such as roads, sidewalks, parks, and recreational facilities. This funding comes from a new city loan (debenture) that will be paid for by additional property assessment growth, and also includes releasing developer fees (Cash-in-lieu of parklands) for recreation projects.",
       "status": "PASSED",
-      "category": "budget",
+      "category": "infrastructure",
       "impact_tags": [
-        "rural development",
-        "capital projects",
-        "community services"
+        "roads",
+        "sidewalks",
+        "parks",
+        "recreation facilities",
+        "development",
+        "budget"
       ],
-      "full_text": "Motion No. 2025-71-06\nMoved by D. Brown Seconded by I. Skalski\nWHEREAS the 2026 Draft Capital Budget for the Agriculture and Rural Affairs Committee was rejected at the meeting of December 4, 2025 with three dissents;\nTHEREFORE BE IT RESOLVED that Council, sitting as Committee of the Whole, approve the Agriculture and Rural Affairs Committee Capital Program (page 5) [individual projects listed pages 10-18], including revised page 17 of the ARAC budget book."
+      "full_text": "THEREFORE, BE IT RESOLVED THAT Council support the release of CILs as identified by Legal Services for the advancement of recreation infrastructure projects; and THEREFORE, BE IT FURTHER RESOLVED THAT Council direct staff to increase the draft 2026 capital budget for Tax supported assets with an additional $20 million debenture in which the annual debt servicing of approximately $1.2 million will be funded from the incremental $1.2 million assessment growth funding; and THEREFORE, IT BE FURTHER RESOLVED THAT staff apply the $20 million capital funding towards core tax supported infrastructure such as roads, sidewalks, parks and recreational facilities. Carried"
     },
     {
       "id": 5,
-      "title": "Permanent Funding for Free Youth Recreation Program",
-      "summary": "The 'Play Free' program, which offers free recreational activities for children and youth across the city, received permanent base funding of $550,000.",
+      "title": "Rural and Agricultural Programs and Capital Projects Funded for 2026",
+      "summary": "The operating and capital budgets for the Agriculture and Rural Affairs Committee (ARAC) were approved for 2026. This decision ensures continued funding for services and infrastructure improvements in Ottawa's rural areas.",
       "status": "PASSED",
-      "category": "recreation",
+      "category": "governance",
       "impact_tags": [
-        "youth programs",
-        "recreation",
-        "community access",
-        "public health"
+        "rural",
+        "agriculture",
+        "community development"
       ],
-      "full_text": "Motion No. 2025-71-07\nMoved by I. Skalski\nSeconded by M. Sutcliffe\nWHEREAS the City of Ottawa is committed to promoting healthy lifestyles and physical activity among children and youth; and\nWHEREAS the Play Free program is a City initiative offering free access to recreational activities such as swimming, skating, and gym sports every Saturday throughout 2023- 2025; and\nWHEREAS the program encourages participation by children and youth aged 17 and under, along with accompanying adults, and includes a variety of drop-in sports such as badminton, basketball, soccer, and volleyball; and\nWHEREAS the Play Free program aligns with the City's goals of fostering community engagement, accessibility, and wellness;\nTHEREFORE BE IT RESOLVED THAT Ottawa City Council allocate $550,000 of base funding to make this program a permanent program moving forward and to:\n1. Endorse and promote the Play Free program as a key initiative to encourage physical activity and family engagement across the city;\n2. Direct staff to ensure clear communication and outreach regarding program details, including eligibility, and participating locations;\n3. Encourage partnerships with community organizations and schools to maximize awareness and participation; and\nBE IT FURTHER RESOLVED THAT the funding source for these allocations be the $550,000 in projected savings from the City"
+      "full_text": "THEREFORE BE IT RESOLVED that Council, sitting as Committee of the Whole, approve the Agriculture and Rural Affairs Committee Capital Program (page 5) [individual projects listed pages 10-18], including revised page 17 of the ARAC budget book. Carried"
+    },
+    {
+      "id": 6,
+      "title": "Funding for Children's Services and Childcare Wage Enhancement Approved",
+      "summary": "Council approved specific funding within the Community Services budget for Children's Services, targeting wage enhancements for childcare workers and supporting the Canada-Wide Early Learning and Child Care (CWELCC) system. This aims to strengthen the childcare workforce and improve access to affordable childcare.",
+      "status": "PASSED",
+      "category": "services",
+      "impact_tags": [
+        "childcare",
+        "early learning",
+        "social services",
+        "affordability"
+      ],
+      "full_text": "Community and Social Services Department - Children's Services Operating Resource Requirement, 'Wage Enhancement &amp; Workforce Comp' and 'Canada Wide System (CWELCC)' line items (Page 10 of the CSC Budget Book); Carried"
+    },
+    {
+      "id": 7,
+      "title": "'Play Free' Program Made Permanent, Offering Free Weekend Recreation",
+      "summary": "Ottawa City Council approved $550,000 in ongoing funding to make the popular 'Play Free' program permanent. This initiative provides free access to recreational activities like swimming, skating, and gym sports every Saturday for children and youth aged 17 and under, along with accompanying adults. The funding will come from projected savings in the city's fuel hedging program.",
+      "status": "PASSED",
+      "category": "services",
+      "impact_tags": [
+        "recreation",
+        "youth",
+        "families",
+        "community",
+        "wellness",
+        "budget"
+      ],
+      "full_text": "THEREFORE BE IT RESOLVED THAT Ottawa City Council allocate $550,000 of base funding to make this program a permanent program moving forward and to: 1. Endorse and promote the Play Free program as a key initiative to encourage physical activity and family engagement across the city; 2. Direct staff to ensure clear communication and outreach regarding program details, including eligibility, and participating locations; 3. Encourage partnerships with community organizations and schools to maximize awareness and participation; and BE IT FURTHER RESOLVED THAT the funding source for these allocations be the $550,000 in projected savings from the City's fuel hedging program reflecting updated hedging pricing and current economic analysis for 2026. Carried"
     }
   ],
   "markdownFile": "data/ottawa_ontario_20260208_023411.md",
-  "cached_at": "2026-02-08T07:40:25.210Z"
+  "cached_at": "2026-02-08T15:19:42.581Z"
 }

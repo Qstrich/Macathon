@@ -284,7 +284,9 @@ function runScraper(city, workingDir) {
 
 // Extract metadata from YAML frontmatter
 function extractMetadata(markdown) {
-  const frontmatterMatch = markdown.match(/^---\n([\s\S]+?)\n---/);
+  // Normalize line endings to \n (Windows files may use \r\n)
+  const normalized = markdown.replace(/\r\n/g, '\n');
+  const frontmatterMatch = normalized.match(/^---\n([\s\S]+?)\n---/);
   if (!frontmatterMatch) return {};
 
   const frontmatter = frontmatterMatch[1];
@@ -292,8 +294,9 @@ function extractMetadata(markdown) {
   
   const lines = frontmatter.split('\n');
   lines.forEach(line => {
-    const match = line.match(/^(\w+):\s*"?(.+?)"?$/);
+    const match = line.match(/^([\w_]+):\s*(.+)$/);
     if (match) {
+      // Strip surrounding quotes
       metadata[match[1]] = match[2].replace(/^"|"$/g, '');
     }
   });
@@ -314,27 +317,31 @@ async function extractMotions(markdown, city) {
     // Limit content to first 15000 chars to avoid token limits
     const content = markdown.slice(0, 15000);
 
-    const prompt = `Analyze this city council meeting minutes and extract all motions, decisions, and bylaws that were voted on or approved.
+    const prompt = `You are a local news translator. Read these city council meeting minutes and extract the key decisions that were made.
 
-Return a JSON array where each motion has:
+Your audience is everyday residents who have NO background in government. Explain everything like you're telling a neighbour what happened at the meeting.
+
+Return a JSON array where each item has:
 {
   "id": <number>,
-  "title": "<short plain-language title, max 80 chars>",
-  "summary": "<one sentence explaining impact on residents>",
+  "title": "<short headline a newspaper would use, max 80 chars>",
+  "summary": "<1-2 sentences explaining what this means for regular people living in the city. No acronyms, no bylaw numbers, no legal language. Focus on: what changed, who it affects, and why it matters.>",
   "status": "<PASSED|FAILED|DEFERRED|AMENDED>",
   "category": "<parking|housing|budget|development|environment|transportation|services|governance|other>",
-  "impact_tags": ["<tag1>", "<tag2>"],
-  "full_text": "<complete motion text>"
+  "impact_tags": ["<plain English tag>", "<plain English tag>"],
+  "full_text": "<the original motion text from the minutes>"
 }
 
-IMPORTANT:
-- Focus on substantive decisions that affect residents
-- Skip procedural items (agenda approval, declarations of interest)
-- Use plain language, not government jargon
-- Extract 5-15 most important motions
-- Prioritize resident impact
+Rules:
+- SKIP procedural items (approving the agenda, confirming minutes, declarations of interest)
+- SKIP items that are just receiving reports for information with no decision
+- Translate ALL government jargon: "bylaw amendment" → "rule change", "zoning" → "land use rules", "debenture" → "borrowing/loan"
+- Titles should be understandable by a high school student
+- Summaries should answer: "So what does this mean for me?"
+- Extract the 5-15 most impactful decisions
+- If fewer than 5 substantive decisions exist, return what you find
 
-Meeting content for ${city}:
+Meeting minutes from ${city}:
 ${content}`;
 
     const result = await model.generateContent(prompt);

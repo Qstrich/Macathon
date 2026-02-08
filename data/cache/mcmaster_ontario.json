@@ -1,99 +1,108 @@
 {
-  "city": "mcmaster, Ontario",
-  "metadata": {},
+  "city": "McMaster, Ontario",
+  "metadata": {
+    "title": "mcmaster, Council Meeting Information",
+    "city": "mcmaster,",
+    "meeting_date": "Unknown",
+    "source_url": "https://www.strathmore.ca/media/haxfqc3b/07-may-2025-minutes-regular-council-meeting.pdf",
+    "document_url": "https://www.strathmore.ca/media/haxfqc3b/07-may-2025-minutes-regular-council-meeting.pdf",
+    "content_type": "PDF",
+    "processed_date": "2026-02-08 02:49:46",
+    "generated_by": "CivicSense"
+  },
   "motions": [
     {
       "id": 1,
-      "title": "Approve WestCreek Area Structure Plan Amendment Bylaw",
-      "summary": "This bylaw officially amends the development plan for the WestCreek area, shaping future land use and development for residents.",
+      "title": "WestCreek Development Plan Amended for Future Growth",
+      "summary": "The city council approved changes to the WestCreek area's overall development plan. This update means how land is developed and used in the WestCreek neighborhood will be updated, affecting where future homes, businesses, and public spaces can be built.",
       "status": "PASSED",
       "category": "development",
       "impact_tags": [
-        "urban planning",
         "land use",
-        "housing development"
+        "community growth",
+        "new construction"
       ],
-      "full_text": "THAT Council give Second Reading to Bylaw No. 25-07, being a Bylaw to amend WestCreek Area Structure Plan No. 08-22. AND THAT Council give Third Reading to Bylaw No. 25-07, being a Bylaw to amend WestCreek Area Structure Plan No. 08-22."
+      "full_text": "THAT Council give Third Reading to Bylaw No. 25-07, being a Bylaw to amend WestCreek Area Structure Plan No. 08-22."
     },
     {
       "id": 2,
-      "title": "Authorize Joint Agreement for 2025 Municipal Election",
-      "summary": "This decision approves an agreement to share election costs and resources with local school divisions for the upcoming 2025 municipal election.",
+      "title": "City to Share Costs with School Boards for 2025 Election",
+      "summary": "The city council decided to work with local school boards to manage and share the costs of the 2025 municipal election. This cooperation will make the election process more coordinated and efficient for residents voting for both city and school board representatives.",
       "status": "PASSED",
       "category": "governance",
       "impact_tags": [
-        "elections",
+        "local elections",
+        "cost efficiency",
         "public services"
       ],
       "full_text": "THAT Council authorizes the Returning Officer to enter into an agreement with the Golden Hills School Division #75 and Christ the Redeemer Catholic Schools for the 2025 municipal election, with costs to be shared as referenced in Attachment I."
     },
     {
       "id": 3,
-      "title": "Initiate Land Annexation from Wheatland County",
-      "summary": "This directs staff to begin the formal process of incorporating land from Wheatland County into the town, potentially expanding town boundaries and services for future residents.",
+      "title": "City Initiates Process to Expand Boundaries into Wheatland County",
+      "summary": "The city council approved the first step towards formally expanding the city's borders by taking over land currently part of Wheatland County. This action means the city intends to grow, which could impact future development, service delivery, and property taxes for residents in or near these areas.",
       "status": "PASSED",
-      "category": "development",
+      "category": "governance",
       "impact_tags": [
-        "urban planning",
-        "municipal boundaries",
-        "land use"
+        "city limits",
+        "community growth",
+        "land ownership"
       ],
       "full_text": "THAT Council direct staff to provide written notice of its' proposed annexation pursuant to Section 116 of the Municipal Government Act."
     },
     {
       "id": 4,
-      "title": "Appoint Returning Officer for 2025 Municipal Election",
-      "summary": "This decision confirms the primary and substitute Returning Officers responsible for managing the upcoming 2025 municipal election.",
-      "status": "PASSED",
+      "title": "New Chief Election Officer Appointed for 2025 Municipal Election",
+      "summary": "The city council changed the person responsible for organizing the 2025 municipal election, appointing Vanessa Cunningham as the new Chief Election Officer. This decision ensures that election-related procedures and staffing will be overseen by new leadership to ensure a smooth democratic process for all residents.",
+      "status": "AMENDED",
       "category": "governance",
       "impact_tags": [
-        "elections",
-        "public administration"
+        "local elections",
+        "public services"
       ],
-      "full_text": "THAT Council rescind Resolution No. 355.12.24: 'THAT Council appoint Johnathan Strathdee as the Town of Strathmore's Returning Officer for the 2025 Municipal Election; AND THAT Council appoint Claudette Thorhaug as the Town of Strathmore's Substitute Returning Officer for the 2025 Municipal Election.' THAT Council appoint Vanessa Cunningham as the Town of Strathmore's Returning Officer for the 2025 Municipal Election. THAT Council appoint Claudette Thorhaug as the Town of Strathmore's Substitute Returning Officer for the 2025 Municipal Election."
+      "full_text": "THAT Council rescind Resolution No. 355.12.24: \"THAT Council appoint Johnathan Strathdee as the Town of Strathmore's Returning Officer for the 2025 Municipal Election; AND THAT Council appoint Claudette Thorhaug as the Town of Strathmore's Substitute Returning Officer for the 2025 Municipal Election.\" THAT Council appoint Vanessa Cunningham as the Town of Strathmore's Returning Officer for the 2025 Municipal Election. THAT Council appoint Claudette Thorhaug as the Town of Strathmore's Substitute Returning Officer for the 2025 Municipal Election."
     },
     {
       "id": 5,
-      "title": "Approve 2025 Property Tax Rate Bylaw with Amendments",
-      "summary": "This officially sets the property tax rates for 2025, including adjustments to school tax rates, directly impacting all property owners in the town.",
-      "status": "AMENDED",
+      "title": "City Approves 2025 Property Tax Rates with School Tax Adjustments",
+      "summary": "The city council has officially approved the property tax rates for 2025, including specific adjustments to the portion of taxes that funds local school boards. This means your property tax bill for the upcoming year will reflect these new rates, directly affecting how much homeowners and businesses pay.",
+      "status": "PASSED",
       "category": "budget",
       "impact_tags": [
         "property taxes",
-        "municipal finance",
-        "school taxes",
-        "cost of living"
+        "household finances",
+        "business costs"
       ],
-      "full_text": "THAT Council give First Reading to Bylaw No. 25-11, being the 2025 Property Tax Rate Bylaw. AND THAT Council give Second Reading to Bylaw No. 25-11, being the 2025 Property Tax Rate Bylaw as amended: ·Amend Alberta School Foundation Fund Tax Rates in Section 2 of Bylaw No. 25-11 as follows: - Residential/Farmland Tax Rate to 2.47200 (2.47300 Prior) - Non-Residential Tax Rate to 3.66900 (3.33300 Prior) - Residential (O/C-135/2010) Tax Rate to 2.55330 (2.43200 Prior) - Non-Residential (O/C-135/2010) Tax Rate to 3.6865 (3.67900 Prior) - Farmland (O/C-135/2010) Tax Rate to 2.5533 (2.43200 Prior) - Amend Christ Redeemer Catholic School Division Tax Rates in Section 2 of Bylaw No. 25-11 as follows: - Residential/Farmland Tax Rate 2.47200 (2.43200 Prior) - oNon-Residential Tax Rate to 3.66900 (3.33300 Prior). AND THAT Council give Third Reading to Bylaw No. 25-11, being the 2025 Property Tax Rate Bylaw."
+      "full_text": "THAT Council give Second Reading to Bylaw No. 25-11, being the 2025 Property Tax Rate Bylaw as amended: ·Amend Alberta School Foundation Fund Tax Rates in Section 2 of Bylaw No. 25-11 as follows: Residential/Farmland Tax Rate to 2.47200 (2.47300 Prior) Non-Residential Tax Rate to 3.66900 (3.33300 Prior) Residential (O/C-135/2010) Tax Rate to 2.55330 (2.43200 Prior) Non-Residential (O/C-135/2010) Tax Rate to 3.6865 (3.67900 Prior) Farmland (O/C-135/2010) Tax Rate to 2.5533 (2.43200 Prior) Amend Christ Redeemer Catholic School Division Tax Rates in Section 2 of Bylaw No. 25-11 as follows: Residential/Farmland Tax Rate 2.47200 (2.43200 Prior) 。 oNon-Residential Tax Rate to 3.66900 (3.33300 Prior)"
     },
     {
       "id": 6,
-      "title": "First Reading for Land Use Bylaw Amendment on Garden and Garage Suites",
-      "summary": "This motion initiates changes to the Land Use Bylaw by removing regulations for garden and garage suites, and schedules a public hearing for public input on these housing options.",
+      "title": "City Considers Easing Rules for Garden and Garage Suites",
+      "summary": "The city council took the initial step to change land use rules that might make it easier to build garden and garage suites (secondary living spaces) on residential properties. A public hearing is now scheduled for June 4th, inviting residents to share their opinions before a final decision is made.",
       "status": "PASSED",
       "category": "housing",
       "impact_tags": [
-        "land use",
-        "housing regulations",
         "secondary suites",
-        "development"
+        "housing options",
+        "land use rules",
+        "public input"
       ],
       "full_text": "THAT Council give First reading to Bylaw No. 25-09, being a bylaw to amend Land Use Bylaw No. 14-11; AND THAT Council direct Administration to schedule a Public Hearing for Bylaw No. 25-09 on June 4, 2025 at 7:00 p.m. in Council Chambers."
     },
     {
       "id": 7,
-      "title": "Proclaim Community Disability Services Professional Appreciation Week",
-      "summary": "This motion declares May 19-25, 2025, as Community Disability Services Professional Appreciation Week, recognizing the important work of those supporting residents with disabilities.",
+      "title": "City Proclaims Appreciation Week for Disability Service Workers",
+      "summary": "The city council officially declared May 19-25, 2025, as Community Disability Services Professional Appreciation Week. This is the city's way of recognizing and celebrating the important work of professionals who provide vital support to individuals with disabilities in our community.",
       "status": "PASSED",
       "category": "services",
       "impact_tags": [
         "community recognition",
-        "disability support",
-        "social services"
+        "social services",
+        "support workers"
       ],
       "full_text": "THAT Council proclaim the week of May 19 - 25, 2025 Community Disability Services Professional Appreciation Week in Strathmore, Alberta."
     }
   ],
-  "markdownFile": "data\\mcmaster_20260208_024946.md",
-  "cached_at": "2026-02-08T07:50:20.202Z"
+  "markdownFile": "data/mcmaster_20260208_024946.md",
+  "cached_at": "2026-02-08T15:17:24.533Z"
 }

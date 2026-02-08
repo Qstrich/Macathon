@@ -1,11 +1,19 @@
 const API_URL = 'http://localhost:3000';
 
 let currentMotions = [];
+let activeCategory = 'all';
+let activeSort = 'default';
 
 // Event listeners
 document.getElementById('searchBtn').addEventListener('click', handleSearch);
 document.getElementById('cityInput').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') handleSearch();
+});
+
+// Sort select listener
+document.getElementById('sortSelect').addEventListener('change', (e) => {
+  activeSort = e.target.value;
+  renderFilteredMotions();
 });
 
 // Handle search
@@ -20,6 +28,9 @@ async function handleSearch() {
   showLoading();
   hideError();
   hideResults();
+  activeCategory = 'all';
+  activeSort = 'default';
+  document.getElementById('sortSelect').value = 'default';
 
   try {
     const response = await fetch(`${API_URL}/api/scrape`, {
@@ -97,58 +108,112 @@ function displayResults(data) {
   
   document.getElementById('meetingInfo').textContent = meetingInfo;
   
-  // Handle PDF document link (the actual parsed document)
-  const pdfUrl = metadata.document_url;
+  // Handle PDF document link
+  const pdfUrl = metadata.document_url || metadata.source_url;
+  const banner = document.getElementById('sourceDocBanner');
   const pdfLinkElement = document.getElementById('pdfLink');
-  const pdfLinkContainer = document.getElementById('pdfLinkContainer');
+  const pdfLinkBtn = document.getElementById('pdfLinkBtn');
   
   if (pdfUrl && pdfUrl !== '#') {
-    pdfLinkElement.href = pdfUrl;
-    // Display a shortened URL or filename
-    const urlParts = pdfUrl.split('/');
-    const fileName = urlParts[urlParts.length - 1] || 'View Document';
-    pdfLinkElement.textContent = decodeURIComponent(fileName).substring(0, 60) + (fileName.length > 60 ? '...' : '');
-    pdfLinkContainer.style.display = 'flex';
-  } else {
-    pdfLinkContainer.style.display = 'none';
-  }
-  
-  // Handle source page link (the repository or listing page)
-  const sourceUrl = metadata.source_url;
-  const sourceLinkElement = document.getElementById('sourceLink');
-  const sourceLinkContainer = document.getElementById('sourceLinkContainer');
-  
-  if (sourceUrl && sourceUrl !== '#' && sourceUrl !== pdfUrl) {
-    sourceLinkElement.href = sourceUrl;
-    // Extract domain for display
+    // Build a human-readable link label
+    let linkLabel = 'Council Meeting Minutes';
     try {
-      const domain = new URL(sourceUrl).hostname.replace('www.', '');
-      sourceLinkElement.textContent = domain;
-    } catch {
-      sourceLinkElement.textContent = 'View Source Page';
-    }
-    sourceLinkContainer.style.display = 'flex';
+      const hostname = new URL(pdfUrl).hostname.replace('www.', '');
+      if (hostname.includes('escribemeetings')) {
+        const cityPart = hostname.split('.')[0].replace('pub-', '');
+        linkLabel = `${cityPart.charAt(0).toUpperCase() + cityPart.slice(1)} Council Minutes — eSCRIBE Portal`;
+      } else {
+        linkLabel = hostname;
+      }
+    } catch {}
+    
+    pdfLinkElement.href = pdfUrl;
+    pdfLinkElement.textContent = linkLabel;
+    pdfLinkBtn.href = pdfUrl;
+    banner.classList.remove('hidden');
   } else {
-    sourceLinkContainer.style.display = 'none';
+    banner.classList.add('hidden');
   }
 
-  // Display motions
-  const grid = document.getElementById('motionsGrid');
-  grid.innerHTML = '';
+  // Build category filter buttons from actual data
+  buildCategoryFilters(motions);
+  document.getElementById('filterBar').classList.remove('hidden');
 
-  if (motions.length === 0) {
-    grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">No motions found in this meeting.</p>';
-  } else {
-    motions.forEach((motion, index) => {
-      const card = createMotionCard(motion, index);
-      grid.appendChild(card);
-    });
-  }
+  // Render motions with current filters
+  renderFilteredMotions();
 
   showResults();
   
   // Scroll to results
   document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Build category filter buttons from motion data
+function buildCategoryFilters(motions) {
+  const container = document.getElementById('categoryFilters');
+  const categories = [...new Set(motions.map(m => m.category?.toLowerCase()).filter(Boolean))];
+  categories.sort();
+
+  container.innerHTML = '<button class="filter-btn active" data-category="all">All</button>';
+  categories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.category = cat;
+    btn.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+    const count = motions.filter(m => m.category?.toLowerCase() === cat).length;
+    btn.innerHTML = `${cat.charAt(0).toUpperCase() + cat.slice(1)} <span class="filter-count">${count}</span>`;
+    container.appendChild(btn);
+  });
+
+  // Attach click handlers
+  container.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCategory = btn.dataset.category;
+      renderFilteredMotions();
+    });
+  });
+}
+
+// Render motions with current filter + sort
+function renderFilteredMotions() {
+  let filtered = [...currentMotions];
+
+  // Filter by category
+  if (activeCategory !== 'all') {
+    filtered = filtered.filter(m => m.category?.toLowerCase() === activeCategory);
+  }
+
+  // Sort
+  if (activeSort === 'category') {
+    filtered.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
+  } else if (activeSort === 'status') {
+    const order = { PASSED: 0, AMENDED: 1, DEFERRED: 2, FAILED: 3 };
+    filtered.sort((a, b) => (order[a.status] ?? 4) - (order[b.status] ?? 4));
+  } else if (activeSort === 'title') {
+    filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+  }
+
+  // Update count
+  const total = currentMotions.length;
+  const shown = filtered.length;
+  document.getElementById('resultsCount').textContent = activeCategory === 'all'
+    ? `${total} decision${total !== 1 ? 's' : ''}`
+    : `${shown} of ${total} decisions`;
+
+  // Render grid
+  const grid = document.getElementById('motionsGrid');
+  grid.innerHTML = '';
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">No decisions in this category.</p>';
+  } else {
+    filtered.forEach((motion, index) => {
+      const card = createMotionCard(motion, index);
+      grid.appendChild(card);
+    });
+  }
 }
 
 // Create motion card

@@ -7,14 +7,17 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header>
+  <!-- Header -->
+  <header>
+    <div class="container">
       <div class="logo">
         <h1>🏛️ CivicSense</h1>
-        <p>Your AI-powered local government news feed</p>
+        <p>AI-powered local government decisions, explained in plain language</p>
       </div>
-    </header>
+    </div>
+  </header>
+
+  <div class="container">
 
     <!-- Search Section -->
     <section class="search-section">
@@ -27,7 +30,7 @@
         >
         <button id="searchBtn">Get Latest News</button>
       </div>
-      <p class="hint">Enter any Canadian city to see what your local council has been up to</p>
+      <p class="hint">Enter any Ontario city to see what your local council decided recently</p>
     </section>
 
     <!-- Loading State -->
@@ -50,16 +53,34 @@
       <div class="results-header">
         <h2 id="cityName"></h2>
         <p class="meeting-info" id="meetingInfo"></p>
-        <div class="document-links">
-          <div class="pdf-link-container" id="pdfLinkContainer">
-            <span class="link-label">📄 Parsed Document:</span>
-            <a href="#" id="pdfLink" class="document-link pdf-link" target="_blank"></a>
+        <div id="sourceDocBanner" class="source-document-banner hidden">
+          <span class="doc-icon">📄</span>
+          <div class="doc-info">
+            <div class="doc-label">Original council document</div>
+            <a href="#" id="pdfLink" class="doc-link" target="_blank"></a>
           </div>
-          <div class="source-link-container" id="sourceLinkContainer">
-            <span class="link-label">🔗 Source Page:</span>
-            <a href="#" id="sourceLink" class="document-link source-link" target="_blank"></a>
+          <a href="#" id="pdfLinkBtn" class="doc-link-btn" target="_blank">View PDF ↗</a>
+        </div>
+      </div>
+
+      <!-- Filter & Sort Toolbar -->
+      <div id="filterBar" class="filter-bar hidden">
+        <div class="filter-group">
+          <label class="filter-label">Category</label>
+          <div class="filter-buttons" id="categoryFilters">
+            <button class="filter-btn active" data-category="all">All</button>
           </div>
         </div>
+        <div class="sort-group">
+          <label class="filter-label">Sort by</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="default">Default order</option>
+            <option value="category">Category</option>
+            <option value="status">Status</option>
+            <option value="title">Title (A-Z)</option>
+          </select>
+        </div>
+        <div class="results-count" id="resultsCount"></div>
       </div>
 
       <div class="motions-grid" id="motionsGrid">

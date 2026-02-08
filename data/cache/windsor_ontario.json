@@ -1,15 +1,26 @@
 {
   "city": "Windsor, Ontario",
-  "metadata": {},
+  "metadata": {
+    "title": "Windsor, Ontario Council Meeting Information",
+    "city": "Windsor, Ontario",
+    "meeting_date": "Unknown",
+    "source_url": "https://coe-pub.escribemeetings.com/Meeting.aspx?Id=d175c10b-a238-4248-834b-9fbdbbd00596&Agenda=Agenda&lang=English&Item=23&Tab=attachments",
+    "document_url": "https://coe-pub.escribemeetings.com/filestream.ashx?DocumentId=12901",
+    "content_type": "PDF",
+    "processed_date": "2026-02-08 02:38:57",
+    "generated_by": "CivicSense"
+  },
   "motions": [
     {
       "id": 1,
-      "title": "Approval of EMS facility lease extension and amendment",
-      "summary": "Extends and amends the lease for the Essex-Windsor EMS facility, ensuring the continued operation and storage of resources vital for emergency services.",
+      "title": "Council Approves Lease Extension for Key EMS Storage Facility",
+      "summary": "Essex County Council approved extending the lease for the Essex-Windsor EMS facility on Erie Street East until 2022. This large facility is crucial for storing supplies, vehicles, and equipment to support emergency services in the region.",
       "status": "PASSED",
       "category": "services",
       "impact_tags": [
         "emergency services",
+        "EMS",
+        "public safety",
         "infrastructure",
         "lease agreement"
       ],
@@ -17,35 +28,36 @@
     },
     {
       "id": 2,
-      "title": "Authorize land acquisition for County Road 11 and South Talbot roundabout",
-      "summary": "Approves the acquisition of lands, including through expropriation if needed, for the construction of a new roundabout at a key intersection to improve traffic flow and safety for commuters.",
+      "title": "Land Acquired for New Roundabout at County Road 11 and South Talbot",
+      "summary": "Council authorized the acquisition of land, including potentially through expropriation, to build a new roundabout at the intersection of County Road 11 (Walker Road) and South Talbot. This project aims to improve traffic flow and safety for commuters.",
       "status": "PASSED",
       "category": "transportation",
       "impact_tags": [
+        "traffic",
         "road safety",
-        "traffic management",
         "infrastructure",
         "land acquisition",
-        "expropriation"
+        "expropriation",
+        "County Road 11"
       ],
       "full_text": "That Essex County Council adopt By-Law Number 41-2019 authorizing Administration to commence the Expropriation Process to acquire lands required to undertake the reconstruction of the intersection of County Road 11 (Walker Road) and South Talbot with a roundabout, which lands required are identified as Parts 1, 2, 3, 5, 6, 7 and 8; And further that Council adopt By-Law Number 42-2019, authorizing Administration to proceed with the Agreement of Purchase and Sale of lands for the three (3) parcels."
     },
     {
       "id": 3,
-      "title": "Waive repayment for Southwestern Integrated Fibre Technology (SWIFT) project",
-      "summary": "Council agrees to forgo a potential refund from the SWIFT project, reinforcing its financial commitment to expanding high-speed internet infrastructure in rural areas for residents and businesses.",
+      "title": "County Waives Repayment for SWIFT Rural Broadband Project",
+      "summary": "To support the expansion of high-speed internet in rural areas, County Council decided to waive its right to be repaid for its initial investment in the Southwestern Integrated Fibre Technology (SWIFT) project. This decision aims to accelerate broadband infrastructure development for underserved communities.",
       "status": "PASSED",
-      "category": "services",
+      "category": "development",
       "impact_tags": [
+        "broadband",
         "internet access",
         "rural development",
-        "broadband",
-        "infrastructure",
+        "technology",
         "funding"
       ],
       "full_text": "That County Council waive its right to repayment of its SWIFT refundable allocation as set forth Appendix A of Report Number 2019-1016-ADM-R016-RM."
     }
   ],
   "markdownFile": "data/windsor_ontario_20260208_023857.md",
-  "cached_at": "2026-02-08T07:40:42.597Z"
+  "cached_at": "2026-02-08T15:20:03.948Z"
 }

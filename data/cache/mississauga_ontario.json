@@ -1,189 +1,181 @@
 {
   "city": "Mississauga, Ontario",
-  "metadata": {},
+  "metadata": {
+    "title": "mississauga, Council Meeting Information",
+    "city": "mississauga,",
+    "meeting_date": "Unknown",
+    "source_url": "https://pub-mississauga.escribemeetings.com/Meeting.aspx?Id=e89abd86-68e3-4731-9626-779e749ec51b&Agenda=Agenda&lang=English",
+    "document_url": "https://pub-mississauga.escribemeetings.com/filestream.ashx?DocumentId=78478",
+    "content_type": "PDF",
+    "processed_date": "2026-02-08 02:01:11",
+    "generated_by": "CivicSense"
+  },
   "motions": [
     {
       "id": 1,
-      "title": "New Restrictions and Amendments to Fireworks By-law",
-      "summary": "Residents will face new restrictions on the sale and use of fireworks, limiting usage to specific times on four designated holidays.",
-      "status": "PASSED",
-      "category": "governance",
-      "impact_tags": [
-        "public safety",
-        "noise reduction",
-        "by-law enforcement",
-        "community"
-      ],
-      "full_text": "1. That Option 2 - Implement Additional Restrictions, as outlined in the corporate report from the Commissioner of Community Services, dated September 17, 2025, entitled '2025 Fireworks By-law Review - Updated Report', be approved, with the exception of the of the hours of fireworks sales permitted only during the 10 calendar days preceding each holiday to curb impulse buying.\n2. That notwithstanding Option 2 restrictions, that fireworks use be permitted from 6:00 p.m. to 10:00 p.m. on four of the five permitted holidays.\n3. That the housekeeping amendments to the Fireworks Licensing and Use By-law 01822023, as outlined in the corporate report from the Commissioner of Community Services, dated September 17, 2025, entitled '2025 Fireworks By-law Review - Updated Report', be approved.\n4. That the Fireworks Licensing and Use By-law 0182-2023 and any other by-laws that pertain to the sale, use and effects of fireworks, be amended to include the housekeeping amendments as outlined in the corporate report, entitled '2025 Fireworks By-law Review Updated Report' and in accordance with the option approved by Council.\n5. That all necessary by-laws be enacted."
-    },
-    {
-      "id": 2,
-      "title": "Refined Fireworks Sales Restrictions By-law",
-      "summary": "Residents will only be able to purchase fireworks in the 10 days before a designated holiday, with sales prohibited on the holiday itself.",
-      "status": "PASSED",
-      "category": "governance",
-      "impact_tags": [
-        "public safety",
-        "by-law enforcement",
-        "retail",
-        "community"
-      ],
-      "full_text": "1. That sales of fireworks be permitted only during the 10 calendar days preceding each designated holiday and be prohibited on the day of the holiday.\n2. That the Fireworks Licensing and Use By-law 0182-2023 and any other by-laws that pertain to the sale, use and effects of fireworks, be amended.\n3. That all necessary by-laws be enacted."
-    },
-    {
-      "id": 3,
-      "title": "Partnership for Growing Healthy Places Initiative",
-      "summary": "The City will partner with a health association to develop and implement programs aimed at promoting community health and physical education.",
+      "title": "City Tightens Rules for Fireworks Sales and Use",
+      "summary": "The city has updated its rules for fireworks. You can now only buy fireworks during the 10 days leading up to a designated holiday, and it's illegal to buy them on the holiday itself. Also, you can only set off fireworks between 6 PM and 10 PM on four specific holidays. This aims to reduce noise and safety concerns in neighborhoods.",
       "status": "PASSED",
       "category": "services",
       "impact_tags": [
-        "community health",
-        "youth programs",
-        "active living",
-        "partnerships"
+        "Fireworks",
+        "public safety",
+        "noise",
+        "holidays"
+      ],
+      "full_text": "GC-0474-2025:\n1. That Option 2 - Implement Additional Restrictions, as outlined in the corporate report from the Commissioner of Community Services, dated September 17, 2025, entitled '2025 Fireworks By-law Review - Updated Report', be approved, with the exception of the of the hours of fireworks sales permitted only during the 10 calendar days preceding each holiday to curb impulse buying.\n2. That notwithstanding Option 2 restrictions, that fireworks use be permitted from 6:00 p.m. to 10:00 p.m. on four of the five permitted holidays.\n3. That the housekeeping amendments to the Fireworks Licensing and Use By-law 01822023, as outlined in the corporate report from the Commissioner of Community Services, dated September 17, 2025, entitled '2025 Fireworks By-law Review - Updated Report', be approved.\n4. That the Fireworks Licensing and Use By-law 0182-2023 and any other by-laws that pertain to the sale, use and effects of fireworks, be amended to include the housekeeping amendments as outlined in the corporate report, entitled '2025 Fireworks By-law Review Updated Report' and in accordance with the option approved by Council.\n5. That all necessary by-laws be enacted.\n\nGC-0475-2025:\n1. That sales of fireworks be permitted only during the 10 calendar days preceding each designated holiday and be prohibited on the day of the holiday.\n2. That the Fireworks Licensing and Use By-law 0182-2023 and any other by-laws that pertain to the sale, use and effects of fireworks, be amended.\n3. That all necessary by-laws be enacted."
+    },
+    {
+      "id": 2,
+      "title": "City Partners for New 'Growing Healthy Places' Community Program",
+      "summary": "The city will be working with a health and education association to launch a 'Growing Healthy Places' program. This means there will be new initiatives aimed at improving community health and well-being, possibly through activities, education, or enhancing access to green spaces in your neighborhood.",
+      "status": "PASSED",
+      "category": "services",
+      "impact_tags": [
+        "Public health",
+        "community programs",
+        "education",
+        "recreation"
       ],
       "full_text": "1. That the Commissioner of Community Services, or their designate, be authorized to execute a services agreement, and all necessary agreements and related ancillary documents, between The Corporation of the City of Mississauga and the Ontario Physical and Health education Association, relating to the development and implementation of the Growing Healthy Places initiative, all in a form satisfactory to the City Solicitor.\n2. That all necessary by-laws be enacted."
     },
     {
-      "id": 4,
-      "title": "Rescinding Obsolete Corporate Policies",
-      "summary": "Two outdated corporate policies regarding vacancy tax rebates and underground wiring were officially cancelled, streamlining city governance.",
+      "id": 3,
+      "title": "City Removes Old Policies on Vacant Property Tax & Underground Wiring",
+      "summary": "The city has decided to cancel two outdated administrative policies. One policy was about tax rebates for vacant properties, and the other concerned how underground wiring was managed. This won't directly affect most residents immediately, but it streamlines how the city manages its own rules and could impact future city planning or property development regulations.",
       "status": "PASSED",
       "category": "governance",
       "impact_tags": [
-        "policy update",
-        "taxation",
-        "infrastructure standards"
+        "City administration",
+        "property taxes",
+        "infrastructure"
       ],
-      "full_text": "That the following Corporate Policies and Procedures be rescinded:\n-  Corporate Policy and Procedure - 04-02-04 - Vacancy Tax Rebates\n-  Corporate Policy and Procedure - 07-02-03 - Underground Wiring"
+      "full_text": "That the following Corporate Policies and Procedures be rescinded:\n- Corporate Policy and Procedure - 04-02-04 - Vacancy Tax Rebates\n- Corporate Policy and Procedure - 07-02-03 - Underground Wiring"
     },
     {
-      "id": 5,
-      "title": "City Assumes Infrastructure for Edilou Subdivision (Ward 10)",
-      "summary": "The City will take over the maintenance and ownership of roads and services in a new residential subdivision, making them public and returning cash security to the developer.",
+      "id": 4,
+      "title": "City Takes Over Roads and Services in New Ward 10 Subdivision",
+      "summary": "The city is now officially taking over responsibility for the roads, sewers, and other public services in a new residential area in Ward 10 (south of Derry Road, east of Ninth Line). This means the city will maintain these new services, and the developer gets their security deposit back for successfully completing the infrastructure work.",
       "status": "PASSED",
       "category": "development",
       "impact_tags": [
-        "new development",
+        "New homes",
         "infrastructure",
-        "municipal services",
-        "ward 10"
+        "city services",
+        "property development"
       ],
       "full_text": "1. That the City of Mississauga assume the municipal works as constructed by Edilou Holdings Inc. under the terms of the Servicing Agreement for 43M-1929 (Ward 10), lands located south of Derry Road, east of Ninth Line, west of Winston Churchill Blvd. and north of Britannia Road;\n2. That the remaining cash security in the amount of $50,000.00 be returned to Edilou Holdings Inc. (Appendix 2)\n3. That a by-law be enacted to assume the road allowance within Registered Plan 43M-1929 as public highway and part of the municipal system system of the City of Mississauga."
     },
     {
-      "id": 6,
-      "title": "Endorsement of Transit and Road Infrastructure Plan",
-      "summary": "The City endorsed a long-term plan for new roads and public transit projects, which will guide future infrastructure development for residents and move to public review.",
+      "id": 5,
+      "title": "City Approves Long-Term Transit and Road Improvement Plan",
+      "summary": "The city council has officially approved a major plan for future transit and road projects. This means the city will use this plan to guide where and when new roads and public transit lines, like bus rapid transit, will be built or upgraded across the city, aiming to improve how everyone gets around.",
       "status": "PASSED",
       "category": "transportation",
       "impact_tags": [
-        "public transit",
-        "road infrastructure",
-        "urban planning",
-        "environmental assessment"
+        "Public transit",
+        "road upgrades",
+        "future planning",
+        "traffic"
       ],
       "full_text": "1. That the report titled 'Transit and Road Infrastructure Plan' dated October 1, 2025, from the Commissioner of Transportation and Works, be endorsed.\n2. That recommendations from the 'Transit and Road Infrastructure Plan' be used to inform the planning and programming of new road and rapid transit infrastructure projects.\n3. That the first two phases of the Municipal Class Environmental Assessment process for the Transit and Road Infrastructure Plan be concluded with a Notice of Completion and by placing the report on the public record for a 30-day review period."
     },
     {
-      "id": 7,
-      "title": "MiWay Bus Parts and Repair Services Contract",
-      "summary": "The City authorized single-source contracts for replacement parts and repair services to keep MiWay buses operational and reliable for commuters.",
+      "id": 6,
+      "title": "City Secures Contracts for MiWay Bus Maintenance Parts",
+      "summary": "The city has approved contracts to ensure a steady supply of replacement parts and repair services for MiWay buses. This decision helps keep the public transit system running smoothly by making sure buses can be fixed quickly and efficiently, minimizing service disruptions for daily commuters.",
       "status": "PASSED",
       "category": "transportation",
       "impact_tags": [
-        "public transit",
-        "miway",
-        "municipal services",
-        "procurement"
+        "Public transit",
+        "city operations",
+        "commuters"
       ],
       "full_text": "1. That the Chief Procurement Officer or designate be authorized to award and execute single source or spot buy contracts with respect to the purchase between The Corporation of the City of Mississauga and each of the Suppliers listed in Appendix 1 for the supply and delivery of replacement parts and sublet repair services for MiWay buses in the estimated amounts outlined in Appendix 1, until such time as the parts/services they provide are no longer required or if a particular supplier fails to perform or ceases to provide the parts or services required or an update is needed, as outlined in the Corporate Report entitled 'Supply and Delivery of Replacement Parts and Sublet Repair Services for MiWay Buses' from the Commissioner of Transportation and Works, and all necessary agreements and related ancillary agreements, all in a form satisfactory to the City Solicitor, in accordance with the City's Procurement Bylaw 0013-2022, as amended.\n2. That all necessary by-laws be enacted."
     },
     {
-      "id": 8,
-      "title": "City Fleet Parts and Repair Services Contract",
-      "summary": "Contracts were authorized to ensure the City's vehicle fleet remains maintained and operational, supporting various municipal services for residents.",
+      "id": 7,
+      "title": "City Approves Contracts for General City Vehicle Repairs",
+      "summary": "The city has approved deals to get replacement parts and repair services for its entire fleet of vehicles, not just buses. This includes everything from police cars to garbage trucks and snowplows, ensuring these essential city services can continue to operate reliably for residents.",
       "status": "PASSED",
       "category": "services",
       "impact_tags": [
-        "municipal services",
-        "fleet management",
-        "infrastructure maintenance",
-        "procurement"
+        "City operations",
+        "public services",
+        "maintenance"
       ],
       "full_text": "1. That the Chief Procurement Officer or designate be authorized to award and execute single source contracts with respect to the purchase between The Corporation of the City of Mississauga and each of the Suppliers outlined in Appendix 1 for the supply and delivery of replacement parts and repair services for City fleet in the estimated amounts outlined in Appendix 1, until such time as the parts/services they provide are no longer required or if a particular supplier fails to perform or ceases to provide the parts or services required or an update is needed, as outlined in the Corporate Report entitled 'Supply and Delivery of Replacement OEM Parts and Services for City Fleet' from the Commissioner of Transportation and Works, dated September 29, 2025 and all necessary agreements and related ancillary agreements, all in a form satisfactory to the City Solicitor, in accordance with the City's Procurement Bylaw 0013-2022, as amended.\n2. That all necessary by-laws be enacted."
     },
     {
-      "id": 9,
-      "title": "Partnership for Downtown Mobility Hub and Transitway",
-      "summary": "The City will partner with Oxford to deliver a major project improving downtown transit connections and mobility for residents.",
+      "id": 8,
+      "title": "Downtown Transit Hub & Connection Project Moves Forward",
+      "summary": "The city has agreed to partner with Omers Realty and Square One Property Corporation to advance the 'Downtown Mobility Hub and Transitway Connection Project.' This means planning and development will continue for a major transit hub and connections in the downtown area, aiming to make it easier to get around by transit and link up with Square One.",
       "status": "PASSED",
       "category": "transportation",
       "impact_tags": [
-        "public transit",
-        "downtown revitalization",
-        "infrastructure development",
-        "partnerships"
+        "Public transit",
+        "downtown development",
+        "infrastructure",
+        "commuters"
       ],
-      "full_text": "That the Commissioner of Transportation &amp; Works and the City Clerk be authorized to enter into and execute a Memorandum of Understanding between The Corporation of the City of Mississauga (the 'City') and Omers Realty Management Corporation and Square One Property Corporation ('Oxford'), including such ancillary and/or future amending agreements as may be required, for the delivery of the Downtown Mobility Hub and Transitway Connection Project ('MOU'), substantially in the form as attached to the Corporate Report from the Commissioner of Transportation and Works, and otherwise in form and content satisfactory to the City Solicitor."
+      "full_text": "That the Commissioner of Transportation & Works and the City Clerk be authorized to enter into and execute a Memorandum of Understanding between The Corporation of the City of Mississauga (the 'City') and Omers Realty Management Corporation and Square One Property Corporation ('Oxford'), including such ancillary and/or future amending agreements as may be required, for the delivery of the Downtown Mobility Hub and Transitway Connection Project ('MOU'), substantially in the form as attached to the Corporate Report from the Commissioner of Transportation and Works, and otherwise in form and content satisfactory to the City Solicitor."
     },
     {
-      "id": 10,
-      "title": "Addressing Lisgar Flooding and Pumping Station Updates",
-      "summary": "Staff were directed to communicate ongoing updates with Ward 10 residents regarding pumping stations and dredging related to Lisgar flooding issues.",
+      "id": 9,
+      "title": "City Staff to Keep Lisgar Residents Updated on Flooding Solutions",
+      "summary": "Following concerns from a Lisgar resident about local flooding, city staff have been directed to work with the local Councillor and community. This means residents in the Lisgar area can expect ongoing communication and updates regarding the pumping stations and the dredging of Osprey Marsh, which are meant to help manage stormwater.",
       "status": "PASSED",
       "category": "environment",
       "impact_tags": [
-        "flood control",
-        "infrastructure",
+        "Flooding",
+        "stormwater management",
         "community engagement",
-        "ward 10"
+        "Lisgar residents"
       ],
       "full_text": "1. That the deputation from Glenn Voakes, Resident regarding the Lisgar flooding and completion of the 4 promised pumping stations, be received; and\n2. That Transportation and Works staff work with Ward 10 Councillor and local community to have ongoing communication and updates regarding pumping stations and dredging of Osprey Marsh."
     },
     {
-      "id": 11,
-      "title": "Approval of Stormwater Advisory Committee Work Plan",
-      "summary": "The proposed work plan for the Stormwater Advisory Committee was approved, guiding future efforts to manage stormwater and prevent flooding across the city.",
+      "id": 10,
+      "title": "Stormwater Advisory Committee's Annual Work Plan Approved",
+      "summary": "The city has approved the work plan for the Stormwater Advisory Committee, a group that helps guide the city's efforts to manage rainwater and prevent flooding. This means the committee will move forward with its planned activities to address stormwater issues, which could lead to better drainage and flood protection for properties.",
       "status": "PASSED",
       "category": "environment",
       "impact_tags": [
-        "stormwater management",
-        "flood control",
-        "environmental planning",
-        "governance"
+        "Stormwater management",
+        "flood protection",
+        "city planning"
       ],
       "full_text": "That Appendix 1 entitled 'Stormwater Advisory Committee (SWAC) Proposed Work Plan Draft' in the memorandum dated September 19, 2025 from Bridget Gilhooly, Business Advisor, Corporate Business Services entitled 'Stormwater Advisory Committee Proposed Work Plan', be approved."
     },
     {
-      "id": 12,
-      "title": "Heritage Designation for 972 Clarkson Road South (Ward 2)",
-      "summary": "A property at 972 Clarkson Road South was officially designated for its heritage value, protecting its unique characteristics from future alterations.",
+      "id": 11,
+      "title": "Property at 972 Clarkson Road South Declared Heritage Site",
+      "summary": "The city has officially designated the property at 972 Clarkson Road South as a heritage site because of its historical, architectural, and contextual importance. This means the property will now have special protections to preserve its unique character and features, affecting how it can be renovated or redeveloped in the future.",
       "status": "PASSED",
-      "category": "development",
+      "category": "heritage",
       "impact_tags": [
-        "heritage preservation",
+        "Heritage protection",
         "property rights",
-        "urban planning",
-        "ward 2"
+        "local history",
+        "Ward 2"
       ],
       "full_text": "That the property at 972 Clarkson Road South (Ward 2) be designated for its physical, design, historical, associative and contextual value and that the appropriate City officials be authorized and directed to take the necessary action to give effect thereto as outlined in the Corporate Report entitled 'Objection to Heritage Designation - 972 Clarkson Road South (Ward 2)' dated September 10, 2025, from the Commissioner of Planning and Building."
     },
     {
-      "id": 13,
-      "title": "Approval to Alter Heritage Property at 1155 Willow Lane (Ward 11)",
-      "summary": "Council approved a request to make alterations to a heritage-designated property, ensuring changes meet design requirements for the Meadowvale Village Heritage District.",
+      "id": 12,
+      "title": "Alterations Approved for Heritage Home on Willow Lane",
+      "summary": "The city has given permission to make changes to a heritage-protected property at 1155 Willow Lane in the Meadowvale Village Heritage District. The proposed new doors meet the design guidelines for the heritage area, meaning residents in such districts can make approved modifications to their homes while still respecting the neighborhood's historical look.",
       "status": "PASSED",
-      "category": "development",
+      "category": "heritage",
       "impact_tags": [
-        "heritage preservation",
-        "property rights",
-        "design standards",
-        "ward 11"
+        "Heritage protection",
+        "property alterations",
+        "homeowners",
+        "Meadowvale Village"
       ],
       "full_text": "1. That the request to alter the Part V heritage designated property at 1155 Willow Lane (Ward 11), as per the Memorandum from the Manager of Indigenous Relations, Culture and HeritagePlanning, dated September 9, 2025, be approved.\n2. That the proposed doors meet the design requirements set forth within the Meadowvale Village Heritage District Plan as reviewed and approved by staff."
     }
   ],
   "markdownFile": "data/mississauga_20260208_020111.md",
-  "cached_at": "2026-02-08T07:13:10.964Z"
+  "cached_at": "2026-02-08T15:18:09.588Z"
 }

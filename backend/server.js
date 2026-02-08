@@ -28,6 +28,66 @@ if (!process.env.GOOGLE_API_KEY) {
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
+// Check if cached data exists for a city
+async function checkCache(city) {
+  try {
+    const cacheDir = path.join(__dirname, 'cache');
+    
+    // Normalize city name to match cache filename
+    const citySlug = city.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    
+    const cacheFile = path.join(cacheDir, `${citySlug}.json`);
+    
+    // Check if cache file exists
+    try {
+      await fs.access(cacheFile);
+    } catch {
+      return null; // Cache file doesn't exist
+    }
+    
+    // Read cache file
+    const cacheContent = await fs.readFile(cacheFile, 'utf-8');
+    const cacheData = JSON.parse(cacheContent);
+    
+    console.log(`[CACHE] Found cached data for ${city} (cached at: ${cacheData.cached_at})`);
+    
+    return cacheData;
+    
+  } catch (error) {
+    console.error('[CACHE ERROR]', error.message);
+    return null;
+  }
+}
+
+// Save data to cache
+async function saveToCache(city, data) {
+  try {
+    const cacheDir = path.join(__dirname, 'cache');
+    
+    // Create cache directory if it doesn't exist
+    try {
+      await fs.mkdir(cacheDir, { recursive: true });
+    } catch (error) {
+      // Directory already exists, ignore
+    }
+    
+    // Normalize city name
+    const citySlug = city.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    
+    const cacheFile = path.join(cacheDir, `${citySlug}.json`);
+    
+    // Write cache file
+    await fs.writeFile(cacheFile, JSON.stringify(data, null, 2));
+    
+  } catch (error) {
+    console.error('[CACHE ERROR] Failed to save cache:', error.message);
+  }
+}
+
 // Endpoint to scrape and process a city
 app.post('/api/scrape', async (req, res) => {
   const { city } = req.body;
@@ -36,11 +96,22 @@ app.post('/api/scrape', async (req, res) => {
     return res.status(400).json({ error: 'City name is required' });
   }
 
-  console.log(`[INFO] Starting scrape for: ${city}`);
+  console.log(`[INFO] Request for: ${city}`);
 
   try {
-    // Step 1: Run Python scraper
-    console.log('[INFO] Running Python scraper...');
+    // Step 1: Check cache first
+    const cachedData = await checkCache(city);
+    if (cachedData) {
+      console.log(`[CACHE HIT] Returning cached data for ${city}`);
+      return res.json({
+        success: true,
+        cached: true,
+        ...cachedData
+      });
+    }
+
+    // Step 2: Cache miss - run Python scraper
+    console.log('[CACHE MISS] Running Python scraper...');
     const scraperPath = path.join(__dirname, '..');
     const markdownFile = await runScraper(city, scraperPath);
     
@@ -66,13 +137,23 @@ app.post('/api/scrape', async (req, res) => {
 
     console.log(`[SUCCESS] Extracted ${motions.length} motions`);
 
-    // Step 4: Return the results
-    res.json({
-      success: true,
+    // Step 4: Save to cache
+    const resultData = {
       city: city,
       metadata: metadata,
       motions: motions,
-      markdownFile: markdownFile
+      markdownFile: markdownFile,
+      cached_at: new Date().toISOString()
+    };
+    
+    await saveToCache(city, resultData);
+    console.log(`[CACHE] Saved ${city} to cache`);
+
+    // Step 5: Return the results
+    res.json({
+      success: true,
+      cached: false,
+      ...resultData
     });
 
   } catch (error) {

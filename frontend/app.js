@@ -86,10 +86,16 @@ function displayResults(data) {
   // Update header
   document.getElementById('cityName').textContent = city;
   
-  const meetingDate = metadata.meeting_date && metadata.meeting_date !== 'Unknown' 
+  // Show cached badge if applicable
+  let meetingInfo = metadata.meeting_date && metadata.meeting_date !== 'Unknown' 
     ? `Meeting Date: ${metadata.meeting_date}` 
     : 'Recent Council Meeting';
-  document.getElementById('meetingInfo').textContent = meetingDate;
+  
+  if (data.cached) {
+    meetingInfo += ' • ⚡ Cached';
+  }
+  
+  document.getElementById('meetingInfo').textContent = meetingInfo;
   
   // Handle PDF document link (the actual parsed document)
   const pdfUrl = metadata.document_url;

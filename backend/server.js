@@ -30,11 +30,22 @@ app.post('/api/scrape', async (req, res) => {
     return res.status(400).json({ error: 'City name is required' });
   }
 
-  console.log(`[INFO] Starting scrape for: ${city}`);
+  console.log(`[INFO] Request for: ${city}`);
 
   try {
-    // Step 1: Run Python scraper
-    console.log('[INFO] Running Python scraper...');
+    // Step 1: Check cache first
+    const cachedData = await checkCache(city);
+    if (cachedData) {
+      console.log(`[CACHE HIT] Returning cached data for ${city}`);
+      return res.json({
+        success: true,
+        cached: true,
+        ...cachedData
+      });
+    }
+
+    // Step 2: Cache miss - run Python scraper
+    console.log('[CACHE MISS] Running Python scraper...');
     const scraperPath = path.join(__dirname, '..');
     const markdownFile = await runScraper(city, scraperPath);
     
@@ -60,13 +71,23 @@ app.post('/api/scrape', async (req, res) => {
 
     console.log(`[SUCCESS] Extracted ${motions.length} motions`);
 
-    // Step 4: Return the results
-    res.json({
-      success: true,
+    // Step 4: Save to cache
+    const resultData = {
       city: city,
       metadata: metadata,
       motions: motions,
-      markdownFile: markdownFile
+      markdownFile: markdownFile,
+      cached_at: new Date().toISOString()
+    };
+    
+    await saveToCache(city, resultData);
+    console.log(`[CACHE] Saved ${city} to cache`);
+
+    // Step 5: Return the results
+    res.json({
+      success: true,
+      cached: false,
+      ...resultData
     });
 
   } catch (error) {

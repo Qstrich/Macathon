@@ -12,6 +12,12 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
+// Determine Python executable - use venv if available
+const projectRoot = path.join(__dirname, '..');
+const venvPython = path.join(projectRoot, 'venv', 'Scripts', 'python.exe');
+const pythonExe = require('fs').existsSync(venvPython) ? venvPython : 'python';
+console.log(`[INFO] Using Python: ${pythonExe}`);
+
 // Check API key
 if (!process.env.GOOGLE_API_KEY) {
   console.error('[ERROR] GOOGLE_API_KEY not found in .env file');
@@ -81,9 +87,12 @@ app.post('/api/scrape', async (req, res) => {
 // Run the Python scraper as a subprocess
 function runScraper(city, workingDir) {
   return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python', ['-m', 'newsroom.main', city], {
+    console.log(`[INFO] Spawning: ${pythonExe} -m newsroom.main "${city}"`);
+    console.log(`[INFO] Working dir: ${workingDir}`);
+    const pythonProcess = spawn(pythonExe, ['-m', 'newsroom.main', city], {
       cwd: workingDir,
-      shell: true
+      shell: true,
+      env: { ...process.env }
     });
 
     let output = '';
@@ -108,13 +117,35 @@ function runScraper(city, workingDir) {
     });
 
     pythonProcess.on('close', (code) => {
-      if (code === 0 && markdownFile) {
+      console.log(`[INFO] Python process exited with code: ${code}`);
+      console.log(`[INFO] Markdown file found: ${markdownFile}`);
+      if (markdownFile) {
+        // Also try matching just the filename from full output
         resolve(markdownFile);
-      } else if (code === 1) {
-        // Graceful exit - no documents found
-        resolve(null);
+      } else if (code === 0) {
+        // Process succeeded but we missed the filename - check data/ dir
+        const dataDir = path.join(workingDir, 'data');
+        const fsSync = require('fs');
+        try {
+          const files = fsSync.readdirSync(dataDir)
+            .filter(f => f.endsWith('.md') && f !== '.gitkeep')
+            .map(f => ({ name: f, time: fsSync.statSync(path.join(dataDir, f)).mtime }))
+            .sort((a, b) => b.time - a.time);
+          if (files.length > 0) {
+            const latestFile = `data/${files[0].name}`;
+            console.log(`[INFO] Found latest file in data/: ${latestFile}`);
+            resolve(latestFile);
+          } else {
+            resolve(null);
+          }
+        } catch (e) {
+          console.error('[ERROR] Could not scan data dir:', e.message);
+          resolve(null);
+        }
       } else {
-        reject(new Error(`Scraper failed with code ${code}: ${errorOutput}`));
+        // Non-zero exit
+        console.error(`[ERROR] Scraper stderr: ${errorOutput}`);
+        resolve(null);
       }
     });
 

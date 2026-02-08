@@ -11,11 +11,8 @@ from dotenv import load_dotenv
 import os
 
 from newsroom.agents.scout import ScoutAgent
-try:
-    from newsroom.agents.navigator import NavigatorAgent
-except ImportError:
-    # Fall back to simple version if crawl4ai is not installed
-    from newsroom.agents.navigator_simple import NavigatorAgent
+# Use navigator_simple which has better parser support
+from newsroom.agents.navigator_simple import NavigatorAgent
 from newsroom.processors.parser import PDFParser
 
 

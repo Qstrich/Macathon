@@ -15,11 +15,13 @@ BS_PARSER = 'html.parser'
 
 
 class PDFInfo(BaseModel):
-    """Information about a discovered PDF document."""
-    url: str = Field(description="Direct URL to the PDF file")
+    """Information about a discovered PDF document or webpage."""
+    url: str = Field(description="Direct URL to the PDF file or webpage")
     title: str = Field(description="Title or description of the document")
     date: Optional[str] = Field(default=None, description="Meeting date if found (YYYY-MM-DD format)")
     file_size: Optional[str] = Field(default=None, description="File size if available")
+    is_html: bool = Field(default=False, description="True if this is HTML content, not a PDF")
+    html_content: Optional[str] = Field(default=None, description="HTML content if is_html is True")
 
 
 class NavigatorAgent:
@@ -123,7 +125,8 @@ class NavigatorAgent:
             pdf_links.append(PDFInfo(
                 url=full_url,
                 title=title,
-                date=date
+                date=date,
+                is_html=False
             ))
         
         return pdf_links

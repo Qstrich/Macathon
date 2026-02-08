@@ -425,7 +425,8 @@ class NavigatorAgent:
             pdf_links.append(PDFInfo(
                 url=full_url,
                 title=title.strip(),
-                date=date
+                date=date,
+                is_html=False
             ))
         
         return pdf_links

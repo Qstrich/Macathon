@@ -14,6 +14,13 @@ from urllib.parse import urljoin, urlparse
 # Use html.parser instead of lxml for Windows compatibility
 BS_PARSER = 'html.parser'
 
+# Import eSCRIBE parser for specialized handling
+try:
+    from newsroom.agents.escribe_parser import eSCRIBEParser, eSCRIBEDocument
+    HAS_ESCRIBE_PARSER = True
+except ImportError:
+    HAS_ESCRIBE_PARSER = False
+
 
 class PDFInfo(BaseModel):
     """Information about a discovered PDF document or webpage."""
@@ -66,6 +73,11 @@ class NavigatorAgent:
                     date=date,
                     is_html=False
                 )
+            
+            # Check if this is an eSCRIBE portal - use specialized parser
+            if HAS_ESCRIBE_PARSER and 'escribemeetings.com' in source_url.lower():
+                print(f"   Detected eSCRIBE portal, using specialized parser...")
+                return await self._handle_escribe_portal(source_url)
             
             print(f"   Fetching: {source_url}")
             
@@ -158,6 +170,64 @@ class NavigatorAgent:
         except Exception as e:
             print(f"   Navigation error: {e}")
             return None
+    
+    async def _handle_escribe_portal(self, meeting_url: str) -> Optional[PDFInfo]:
+        """
+        Handle eSCRIBE meeting portal URLs to extract actual documents.
+        
+        Args:
+            meeting_url: URL of eSCRIBE meeting page or portal homepage
+        
+        Returns:
+            PDFInfo with document information
+        """
+        parser = eSCRIBEParser()
+        
+        # If this is the main portal page, find the latest meeting first
+        if 'Meeting.aspx' not in meeting_url and 'Meeting?' not in meeting_url:
+            print("   eSCRIBE portal homepage detected, finding latest meeting...")
+            latest_meeting_url = parser.find_latest_meeting(meeting_url)
+            if latest_meeting_url:
+                print(f"   Found latest meeting: {latest_meeting_url[:80]}...")
+                meeting_url = latest_meeting_url
+            else:
+                print("   Could not find any meeting pages")
+                return None
+        
+        # Extract all documents from the meeting page
+        documents = parser.extract_documents(meeting_url)
+        
+        if not documents:
+            print("   No documents found in eSCRIBE portal")
+            return None
+        
+        print(f"   Found {len(documents)} documents in eSCRIBE portal")
+        
+        # Prioritize: Minutes > Agenda > Packet > Other
+        priority_order = ['minutes', 'agenda', 'packet', 'report']
+        
+        for doc_type in priority_order:
+            for doc in documents:
+                if doc.doc_type.lower() == doc_type:
+                    print(f"   Selected: {doc.title} ({doc.doc_type})")
+                    return PDFInfo(
+                        url=doc.url,
+                        title=doc.title,
+                        date=doc.date,
+                        is_html=False
+                    )
+        
+        # If no prioritized documents, return first one
+        if documents:
+            print(f"   Using first available document: {documents[0].title}")
+            return PDFInfo(
+                url=documents[0].url,
+                title=documents[0].title,
+                date=documents[0].date,
+                is_html=False
+            )
+        
+        return None
     
     def _extract_pdf_links(self, soup: BeautifulSoup, base_url: str) -> list[PDFInfo]:
         """
@@ -329,6 +399,43 @@ class NavigatorAgent:
         
         # If no dated PDFs, return the first one found
         return undated_pdfs[0] if undated_pdfs else pdf_links[0]
+    
+    def _extract_meeting_links(self, soup: BeautifulSoup, base_url: str) -> list[str]:
+        """
+        Extract links to individual meeting pages from a calendar/portal page.
+        
+        Args:
+            soup: BeautifulSoup object of the page
+            base_url: Base URL for resolving relative links
+        
+        Returns:
+            List of meeting page URLs
+        """
+        meeting_urls = []
+        
+        for link in soup.find_all('a', href=True):
+            href = link['href']
+            text = link.get_text().lower()
+            
+            # Skip obvious non-meeting links
+            if any(skip in href.lower() for skip in ['facebook', 'twitter', 'mailto:', 'javascript:', '#']):
+                continue
+            
+            # Look for meeting-specific patterns
+            is_meeting_link = (
+                'meeting.aspx' in href.lower() or  # eSCRIBE pattern
+                'calendar' in href.lower() and 'meeting' in text or
+                'agenda' in href.lower() or
+                'minutes' in href.lower() or
+                re.search(r'202[456]', text)  # Contains a recent year
+            )
+            
+            if is_meeting_link:
+                full_url = urljoin(base_url, href)
+                if full_url not in meeting_urls:
+                    meeting_urls.append(full_url)
+        
+        return meeting_urls
     
     def _find_meetings_subpage(self, soup: BeautifulSoup, base_url: str) -> Optional[str]:
         """

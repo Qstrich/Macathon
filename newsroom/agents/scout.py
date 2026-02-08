@@ -56,7 +56,9 @@ class ScoutAgent:
         
         # Step 1: Try multiple search queries with region specificity
         # Focus on finding actual meeting MINUTES, not bylaws or legislation
+        # Prioritize eSCRIBE portals for reliable document access
         search_queries = [
+            f"{city_name} escribemeetings.com",  # Look for eSCRIBE portal first
             f"\"{city_only}\" {region} council minutes.pdf 2026" if region else f"{city_only} council minutes.pdf 2026",
             f"{city_name} \"committee minutes\" filetype:pdf 2026",
             f"{city_name} \"meeting minutes\" \"approved\" filetype:pdf",
@@ -159,14 +161,16 @@ REJECT any URLs for cities in other provinces/states or countries.
 
 Analyze the following URLs and identify the ONE that is most likely to contain RECENT city council agendas or minutes.
 
-PRIORITIZE URLs with these signals:
-1. Location match - URL domain or path contains correct city/region - MANDATORY
-2. Direct PDF links to MINUTES or AGENDAS (.pdf extension with "minutes" or "agenda" in filename) - HIGHEST PRIORITY
-3. Current year (2026 or 2025) in URL path or filename
-4. Keywords in URL: "minutes.pdf", "agenda.pdf", "packet.pdf"
-5. Meeting document repositories with date-specific PDFs
-6. City clerk document archives with actual meeting files
-7. Official Canadian domains (.ca, .on.ca, etc.) if city is in Canada
+            PRIORITIZE URLs with these signals:
+            1. Location match - URL domain or path contains correct city/region - MANDATORY
+            2. City-specific eSCRIBE portals (e.g., pub-cityname.escribemeetings.com) - HIGHEST PRIORITY
+            3. Generic eSCRIBE domains (www.escribemeetings.com) - ONLY if no city-specific portal found
+            4. Direct PDF links to MINUTES or AGENDAS (.pdf extension with "minutes" or "agenda" in filename)
+            5. Current year (2026 or 2025) in URL path or filename
+            6. Keywords in URL: "minutes.pdf", "agenda.pdf", "packet.pdf"
+            7. Meeting document repositories with date-specific PDFs
+            8. City clerk document archives with actual meeting files
+            9. Official Canadian domains (.ca, .on.ca, etc.) if city is in Canada
 
 DEPRIORITIZE (unless no better option):
 - Meeting portals without direct PDF links in the URL

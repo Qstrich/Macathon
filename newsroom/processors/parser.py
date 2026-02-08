@@ -14,23 +14,23 @@ from pydantic import BaseModel, Field
 
 class Motion(BaseModel):
     """Represents a single motion or decision from a council meeting."""
-    id: int = Field(description="Unique motion number")
-    title: str = Field(description="Short, plain-language title (max 80 chars)")
-    summary: str = Field(description="One-sentence summary for residents")
-    status: str = Field(description="PASSED, FAILED, DEFERRED, or AMENDED")
-    vote: Optional[Dict[str, int]] = Field(default=None, description="Vote breakdown: {for, against, abstain}")
-    category: str = Field(description="Category: parking, housing, budget, environment, etc.")
-    impact_tags: List[str] = Field(default_factory=list, description="Who/what this affects")
-    full_text: Optional[str] = Field(default=None, description="Complete motion text")
+    id: int
+    title: str
+    summary: str
+    status: str
+    vote: Optional[Dict[str, int]] = None
+    category: str
+    impact_tags: List[str] = []
+    full_text: Optional[str] = None
 
 
 class MeetingData(BaseModel):
     """Complete meeting data with extracted motions."""
-    city: str = Field(description="City name")
-    meeting_date: str = Field(description="Date of meeting")
-    source_url: str = Field(description="Original source URL")
-    processed_date: str = Field(description="When this was processed")
-    motions: List[Motion] = Field(description="List of motions/decisions")
+    city: str
+    meeting_date: str
+    source_url: str
+    processed_date: str
+    motions: List[Motion]
 
 
 class PDFParser:
@@ -170,18 +170,6 @@ class PDFParser:
                     temp_pdf.unlink()
             except:
                 pass
-            
-            # Extract motions and save JSON
-            print(f"   Extracting motions with AI...")
-            json_path = await self._extract_and_save_motions(
-                markdown_content=markdown_content,
-                city_name=city_name,
-                meeting_date=meeting_date,
-                source_url=source_url,
-                output_path=output_path
-            )
-            if json_path:
-                print(f"   Motions saved to: {json_path}")
             
             return output_path
     
@@ -378,3 +366,92 @@ generated_by: "CivicSense"
         else:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             return f"{safe_city}_{timestamp}.md"
+    
+    async def _extract_and_save_motions(
+        self,
+        markdown_content: str,
+        city_name: str,
+        meeting_date: Optional[str],
+        source_url: str,
+        output_path: Path
+    ) -> Optional[Path]:
+        """
+        Extract motions from markdown content using Gemini AI and save as JSON.
+        
+        Args:
+            markdown_content: The full markdown text
+            city_name: Name of the city
+            meeting_date: Date of the meeting
+            source_url: Original source URL
+            output_path: Path to the markdown file
+        
+        Returns:
+            Path to the JSON file if successful, None otherwise
+        """
+        try:
+            from google import genai
+            
+            client = genai.Client()
+            
+            # Limit content to avoid token limits (first 15000 chars usually contains the motions)
+            content_sample = markdown_content[:15000]
+            
+            prompt = f"""Analyze this city council meeting minutes and extract all motions, decisions, and bylaws that were voted on or approved.
+
+For each motion, provide:
+1. **title**: Short, plain-language title (max 80 characters) - what actually happened, not procedural language
+2. **summary**: One sentence explaining the impact on residents (e.g., "Parking fines on King St increased by $10")
+3. **status**: PASSED, FAILED, DEFERRED, or AMENDED
+4. **vote**: If mentioned, extract {{"for": X, "against": Y, "abstain": Z}}
+5. **category**: Classify as one of: parking, housing, budget, development, environment, transportation, services, governance, other
+6. **impact_tags**: List of tags like "Downtown", "Residents", "Business", "Taxes", etc.
+7. **full_text**: The complete text of the motion/decision
+
+IMPORTANT:
+- Focus on substantive decisions that affect residents
+- Skip procedural items (agenda approval, minute approval, declarations of interest)
+- Use plain language, not government jargon
+- Extract 5-15 most important motions (prioritize resident impact)
+- If vote details aren't mentioned, set vote to null
+
+Meeting content:
+{content_sample}"""
+
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config={
+                    'response_mime_type': 'application/json',
+                    'response_schema': list[Motion],
+                },
+            )
+            
+            motions = response.parsed
+            
+            if not motions:
+                print(f"   No motions extracted")
+                return None
+            
+            # Create full meeting data structure
+            meeting_data = MeetingData(
+                city=city_name,
+                meeting_date=meeting_date or "Unknown",
+                source_url=source_url,
+                processed_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                motions=motions
+            )
+            
+            # Save to JSON file
+            json_path = output_path.with_suffix('.json')
+            json_path.write_text(
+                meeting_data.model_dump_json(indent=2),
+                encoding='utf-8'
+            )
+            
+            print(f"   Extracted {len(motions)} motions")
+            return json_path
+            
+        except Exception as e:
+            print(f"   Motion extraction failed: {e}")
+            print(f"   (Markdown still saved, continuing without JSON)")
+            return None

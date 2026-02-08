@@ -1,0 +1,3 @@
+@echo off
+echo Opening CivicSense Frontend...
+start frontend\index.html

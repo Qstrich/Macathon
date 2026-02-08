@@ -1,0 +1,478 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 40px;
+  color: white;
+}
+
+.logo h1 {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.logo p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+/* Search Section */
+.search-section {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  margin-bottom: 40px;
+}
+
+.search-box {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+#cityInput {
+  flex: 1;
+  padding: 18px 25px;
+  font-size: 1.1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  transition: border-color 0.3s;
+}
+
+#cityInput:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+#searchBtn {
+  padding: 18px 35px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#searchBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+#searchBtn:active {
+  transform: translateY(0);
+}
+
+.hint {
+  text-align: center;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.loading-subtext {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.error-title {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #e74c3c;
+}
+
+.error-message {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 25px;
+}
+
+.retry-btn {
+  padding: 15px 30px;
+  font-size: 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.retry-btn:hover {
+  background: #5568d3;
+}
+
+/* Results Section */
+.results-section {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.results-header {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.results-header h2 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.meeting-info {
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 15px;
+}
+
+/* Document Links Section */
+.document-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.pdf-link-container,
+.source-link-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+}
+
+.link-label {
+  font-weight: 600;
+  color: #555;
+  font-size: 0.9rem;
+  min-width: 140px;
+}
+
+.document-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+  word-break: break-all;
+  font-size: 0.95rem;
+}
+
+.document-link:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+.pdf-link {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .pdf-link-container,
+  .source-link-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .link-label {
+    min-width: auto;
+  }
+}
+
+/* Motion Cards */
+.motions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+}
+
+.motion-card {
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 25px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent;
+}
+
+.motion-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  border-color: #667eea;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.card-category {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+/* Category colors */
+.category-parking { background: #fff3cd; color: #856404; }
+.category-housing { background: #d1ecf1; color: #0c5460; }
+.category-budget { background: #d4edda; color: #155724; }
+.category-development { background: #cce5ff; color: #004085; }
+.category-environment { background: #d4edda; color: #155724; }
+.category-transportation { background: #fff3cd; color: #856404; }
+.category-services { background: #e2e3e5; color: #383d41; }
+.category-governance { background: #f8d7da; color: #721c24; }
+.category-other { background: #e2e3e5; color: #383d41; }
+
+.card-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.status-passed { background: #28a745; color: white; }
+.status-failed { background: #dc3545; color: white; }
+.status-deferred { background: #ffc107; color: #333; }
+.status-amended { background: #17a2b8; color: white; }
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.card-summary {
+  color: #666;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin-bottom: 15px;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  font-size: 0.8rem;
+  padding: 5px 12px;
+  background: #e9ecef;
+  color: #495057;
+  border-radius: 15px;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.3s;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.modal-close:hover {
+  color: #333;
+  background: #f0f0f0;
+}
+
+.modal-header {
+  padding: 30px 30px 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-category {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 15px;
+}
+
+.modal-header h3 {
+  font-size: 1.8rem;
+  color: #333;
+  line-height: 1.4;
+  padding-right: 40px;
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+.modal-summary {
+  font-size: 1.1rem;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+}
+
+.modal-status {
+  margin-bottom: 20px;
+}
+
+.modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.modal-full-text {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  line-height: 1.8;
+  color: #555;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+}
+
+.modal-full-text h4 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* Utility classes */
+.hidden {
+  display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .logo h1 {
+    font-size: 2rem;
+  }
+  
+  .search-box {
+    flex-direction: column;
+  }
+  
+  .motions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    margin: 20px;
+  }
+}

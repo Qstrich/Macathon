@@ -79,7 +79,7 @@ class PDFParser:
             # Process PDF
             # Step 1: Download PDF
             print(f"   Downloading PDF from: {pdf_url}")
-            pdf_bytes = await self._download_pdf(pdf_url)
+            pdf_bytes = await self._download_pdf(pdf_url, source_url)
             
             # Save PDF temporarily
             temp_pdf = self.output_dir / "temp_download.pdf"
@@ -117,22 +117,64 @@ class PDFParser:
                 if temp_pdf.exists():
                     temp_pdf.unlink()
     
-    async def _download_pdf(self, url: str) -> bytes:
+    async def _download_pdf(self, url: str, source_url: str = None) -> bytes:
         """
-        Download PDF content from URL.
+        Download PDF content from URL with proper headers to avoid 403 errors.
         
         Args:
             url: URL of the PDF file
+            source_url: The page URL where the PDF link was found (for Referer header)
         
         Returns:
             PDF content as bytes
         """
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status != 200:
-                    raise Exception(f"Failed to download PDF: HTTP {response.status}")
-                
-                return await response.read()
+        import ssl
+        
+        # Create headers that mimic a real browser
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/pdf,application/x-pdf,*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        # Add Referer if source URL provided (helps with 403 errors)
+        if source_url:
+            headers['Referer'] = source_url
+        
+        # Disable SSL verification for problematic servers
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        async with aiohttp.ClientSession(headers=headers) as session:
+            try:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=60), ssl=ssl_context) as response:
+                    if response.status == 403:
+                        raise Exception(f"Access forbidden (HTTP 403) - Server blocked the request")
+                    elif response.status == 404:
+                        raise Exception(f"Document not found (HTTP 404) - URL may be outdated")
+                    elif response.status != 200:
+                        raise Exception(f"Failed to download PDF: HTTP {response.status}")
+                    return await response.read()
+            except aiohttp.ClientError as e:
+                # Try one more time without SSL verification
+                print(f"   First download attempt failed: {e}")
+                print(f"   Retrying with different settings...")
+                try:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=60), ssl=False) as response:
+                        if response.status == 403:
+                            raise Exception(f"Access forbidden (HTTP 403) - Server blocked the request")
+                        elif response.status == 404:
+                            raise Exception(f"Document not found (HTTP 404) - URL may be outdated")
+                        elif response.status != 200:
+                            raise Exception(f"Failed to download PDF: HTTP {response.status}")
+                        return await response.read()
+                except Exception as retry_error:
+                    # Final failure - raise with clear message
+                    raise Exception(f"Could not download document: {retry_error}")
     
     def _html_to_markdown(self, html_content: str) -> str:
         """

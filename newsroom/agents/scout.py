@@ -56,14 +56,25 @@ class ScoutAgent:
         
         # Step 1: Try multiple search queries with region specificity
         # Focus on finding actual meeting MINUTES, not bylaws or legislation
-        # Prioritize eSCRIBE portals for reliable document access
+        # Prioritize meeting portals (eSCRIBE, TMMIS) for reliable document access
         search_queries = [
             f"{city_name} escribemeetings.com",  # Look for eSCRIBE portal first
+            f"{city_name} secure.toronto.ca council" if 'toronto' in city_name.lower() else None,  # TMMIS for Toronto
             f"\"{city_only}\" {region} council minutes.pdf 2026" if region else f"{city_only} council minutes.pdf 2026",
             f"{city_name} \"committee minutes\" filetype:pdf 2026",
             f"{city_name} \"meeting minutes\" \"approved\" filetype:pdf",
             f"{city_name} clerk minutes agenda 2026 site:.ca" if region else f"{city_name} clerk minutes 2026"
         ]
+        
+        # Add French queries for Quebec cities
+        if region and 'quebec' in region.lower():
+            search_queries.extend([
+                f'{city_name} "procès-verbal" conseil 2026',  # French for "minutes"
+                f'{city_name} "ordre du jour" conseil 2026',  # French for "agenda"
+            ])
+        
+        # Remove None values
+        search_queries = [q for q in search_queries if q]
         
         all_results = []
         for query in search_queries:
@@ -164,13 +175,14 @@ Analyze the following URLs and identify the ONE that is most likely to contain R
             PRIORITIZE URLs with these signals:
             1. Location match - URL domain or path contains correct city/region - MANDATORY
             2. City-specific eSCRIBE portals (e.g., pub-cityname.escribemeetings.com) - HIGHEST PRIORITY
-            3. Generic eSCRIBE domains (www.escribemeetings.com) - ONLY if no city-specific portal found
-            4. Direct PDF links to MINUTES or AGENDAS (.pdf extension with "minutes" or "agenda" in filename)
-            5. Current year (2026 or 2025) in URL path or filename
-            6. Keywords in URL: "minutes.pdf", "agenda.pdf", "packet.pdf"
-            7. Meeting document repositories with date-specific PDFs
-            8. City clerk document archives with actual meeting files
-            9. Official Canadian domains (.ca, .on.ca, etc.) if city is in Canada
+            3. Toronto TMMIS portal (secure.toronto.ca/council) - HIGHEST PRIORITY for Toronto
+            4. Generic eSCRIBE domains (www.escribemeetings.com) - ONLY if no city-specific portal found
+            5. Direct PDF links to MINUTES or AGENDAS (.pdf extension with "minutes" or "agenda" in filename)
+            6. Current year (2026 or 2025) in URL path or filename
+            7. Keywords in URL: "minutes.pdf", "agenda.pdf", "packet.pdf"
+            8. Meeting document repositories with date-specific PDFs
+            9. City clerk document archives with actual meeting files
+            10. Official Canadian domains (.ca, .on.ca, etc.) if city is in Canada
 
 DEPRIORITIZE (unless no better option):
 - Meeting portals without direct PDF links in the URL

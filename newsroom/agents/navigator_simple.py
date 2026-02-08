@@ -14,12 +14,18 @@ from urllib.parse import urljoin, urlparse
 # Use html.parser instead of lxml for Windows compatibility
 BS_PARSER = 'html.parser'
 
-# Import eSCRIBE parser for specialized handling
+# Import specialized parsers for meeting portals
 try:
     from newsroom.agents.escribe_parser import eSCRIBEParser, eSCRIBEDocument
     HAS_ESCRIBE_PARSER = True
 except ImportError:
     HAS_ESCRIBE_PARSER = False
+
+try:
+    from newsroom.agents.tmmis_parser import TMMISParser, TMMISDocument
+    HAS_TMMIS_PARSER = True
+except ImportError:
+    HAS_TMMIS_PARSER = False
 
 
 class PDFInfo(BaseModel):
@@ -77,7 +83,28 @@ class NavigatorAgent:
             # Check if this is an eSCRIBE portal - use specialized parser
             if HAS_ESCRIBE_PARSER and 'escribemeetings.com' in source_url.lower():
                 print(f"   Detected eSCRIBE portal, using specialized parser...")
-                return await self._handle_escribe_portal(source_url)
+                try:
+                    result = await self._handle_escribe_portal(source_url)
+                    if result:
+                        return result
+                    print("   eSCRIBE parser returned no results, trying standard scraping...")
+                except Exception as e:
+                    print(f"   eSCRIBE parser error: {e}, falling back to standard scraping...")
+                    # Fall through to standard scraping
+            
+            # Check if this is a TMMIS portal (Toronto) - use specialized parser
+            if HAS_TMMIS_PARSER and ('secure.toronto.ca' in source_url.lower() or 
+                                      'app.toronto.ca' in source_url.lower() or
+                                      'tmmis' in source_url.lower()):
+                print(f"   Detected TMMIS portal (Toronto), using specialized parser...")
+                try:
+                    result = await self._handle_tmmis_portal(source_url)
+                    if result:
+                        return result
+                    print("   TMMIS parser returned no results, trying standard scraping...")
+                except Exception as e:
+                    print(f"   TMMIS parser error: {e}, falling back to standard scraping...")
+                    # Fall through to standard scraping
             
             print(f"   Fetching: {source_url}")
             
@@ -169,6 +196,7 @@ class NavigatorAgent:
             
         except Exception as e:
             print(f"   Navigation error: {e}")
+            # Don't crash - return None to allow graceful exit
             return None
     
     async def _handle_escribe_portal(self, meeting_url: str) -> Optional[PDFInfo]:
@@ -181,7 +209,17 @@ class NavigatorAgent:
         Returns:
             PDFInfo with document information
         """
+        if not HAS_ESCRIBE_PARSER:
+            return None
+        
         parser = eSCRIBEParser()
+        
+        # Check if URL is incomplete (missing meeting ID)
+        if 'Meeting.aspx?Id' in meeting_url and meeting_url.endswith('?Id'):
+            print("   Incomplete eSCRIBE URL detected (missing meeting ID)")
+            # Extract base URL and try to find latest meeting
+            base_url = meeting_url.split('/Meeting.aspx')[0]
+            meeting_url = base_url + '/'
         
         # If this is the main portal page, find the latest meeting first
         if 'Meeting.aspx' not in meeting_url and 'Meeting?' not in meeting_url:
@@ -229,9 +267,70 @@ class NavigatorAgent:
         
         return None
     
+    async def _handle_tmmis_portal(self, meeting_url: str) -> Optional[PDFInfo]:
+        """
+        Handle Toronto's TMMIS meeting portal URLs to extract documents.
+        
+        Args:
+            meeting_url: URL of TMMIS meeting page or portal homepage
+        
+        Returns:
+            PDFInfo with document information
+        """
+        if not HAS_TMMIS_PARSER:
+            return None
+        
+        parser = TMMISParser()
+        
+        # If this is a general council page, try to find a specific meeting
+        if 'council/report.do' not in meeting_url and 'agenda' not in meeting_url.lower():
+            print("   TMMIS portal homepage detected, finding latest meeting...")
+            latest_meeting_url = parser.find_latest_meeting(meeting_url)
+            if latest_meeting_url:
+                print(f"   Found latest meeting: {latest_meeting_url[:80]}...")
+                meeting_url = latest_meeting_url
+            else:
+                print("   Could not find any meeting pages")
+                return None
+        
+        # Extract all documents from the meeting page
+        documents = parser.extract_documents(meeting_url)
+        
+        if not documents:
+            print("   No documents found in TMMIS portal")
+            return None
+        
+        print(f"   Found {len(documents)} documents in TMMIS portal")
+        
+        # Prioritize: Minutes > Agenda > Decision > Report > Other
+        priority_order = ['minutes', 'agenda', 'decision', 'report']
+        
+        for doc_type in priority_order:
+            for doc in documents:
+                if doc.doc_type.lower() == doc_type:
+                    print(f"   Selected: {doc.title} ({doc.doc_type})")
+                    return PDFInfo(
+                        url=doc.url,
+                        title=doc.title,
+                        date=doc.date,
+                        is_html=False
+                    )
+        
+        # If no prioritized documents, return first one
+        if documents:
+            print(f"   Using first available document: {documents[0].title}")
+            return PDFInfo(
+                url=documents[0].url,
+                title=documents[0].title,
+                date=documents[0].date,
+                is_html=False
+            )
+        
+        return None
+    
     def _extract_pdf_links(self, soup: BeautifulSoup, base_url: str) -> list[PDFInfo]:
         """
-        Extract all PDF links from the page with enhanced metadata.
+        Extract all PDF links from the page with enhanced metadata and filtering.
         
         Args:
             soup: BeautifulSoup object of the page
@@ -242,9 +341,17 @@ class NavigatorAgent:
         """
         pdf_links = []
         
+        # Blacklist for non-meeting documents
+        blacklist_keywords = [
+            'contact', 'directory', 'phone', 'staff list',
+            'organizational chart', 'org chart', 'constitution',
+            'budget summary', 'annual report cover', 'letterhead'
+        ]
+        
         # Find all links that might point to PDFs
         for link in soup.find_all('a', href=True):
             href = link['href']
+            text = link.get_text().lower()
             
             # Check if it's a PDF link - be more lenient
             is_pdf = (
@@ -256,6 +363,10 @@ class NavigatorAgent:
             )
             
             if not is_pdf:
+                continue
+            
+            # Skip blacklisted documents
+            if any(keyword in text or keyword in href.lower() for keyword in blacklist_keywords):
                 continue
             
             # Resolve relative URLs

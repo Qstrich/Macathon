@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toronto City Council Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <div class="logo">
+        <h1>Toronto City Council Tracker</h1>
+        <p>Recent council decisions, explained in plain language</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Timeline + Detail Layout -->
+    <section id="timelineLayout" class="timeline-layout">
+      <!-- Timeline column -->
+      <aside class="timeline-column">
+        <div class="timeline-header">
+          <h2>Meetings</h2>
+          <p class="timeline-subtitle">Recent Toronto City Council meetings</p>
+        </div>
+        <div id="regionFilters" class="region-filter-bar">
+          <!-- Region filter buttons will be injected here -->
+        </div>
+        <div id="timelineList" class="timeline-list">
+          <!-- Timeline items will be injected here -->
+        </div>
+      </aside>
+
+      <!-- Detail column -->
+      <main class="detail-column">
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state hidden">
+          <div class="spinner"></div>
+          <p class="loading-text">Fetching council meeting data...</p>
+          <p class="loading-subtext">This may take a moment while we read the minutes.</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state hidden">
+          <div class="error-icon">⚠️</div>
+          <h3 class="error-title">Unable to load this meeting</h3>
+          <p class="error-message" id="errorMessage"></p>
+          <button class="retry-btn" id="retryBtn">Try Again</button>
+        </div>
+
+        <!-- Results Section -->
+        <section id="resultsSection" class="results-section hidden">
+          <div class="results-header">
+            <h2 id="cityName">Toronto City Council</h2>
+            <p class="meeting-info" id="meetingInfo"></p>
+            <div id="sourceDocBanner" class="source-document-banner hidden">
+              <span class="doc-icon">📄</span>
+              <div class="doc-info">
+                <div class="doc-label">Original council document</div>
+                <a href="#" id="pdfLink" class="doc-link" target="_blank"></a>
+              </div>
+              <a href="#" id="pdfLinkBtn" class="doc-link-btn" target="_blank">View Source ↗</a>
+            </div>
+          </div>
+
+          <!-- Filter & Sort Toolbar -->
+          <div id="filterBar" class="filter-bar hidden">
+            <div class="filter-group">
+              <label class="filter-label">Category</label>
+              <div class="filter-buttons" id="categoryFilters">
+                <button class="filter-btn active" data-category="all">All</button>
+              </div>
+            </div>
+            <div class="sort-group">
+              <label class="filter-label">Sort by</label>
+              <select id="sortSelect" class="sort-select">
+                <option value="default">Default order</option>
+                <option value="category">Category</option>
+                <option value="status">Status</option>
+                <option value="title">Title (A-Z)</option>
+              </select>
+            </div>
+            <div class="results-count" id="resultsCount"></div>
+          </div>
+
+          <div class="motions-grid" id="motionsGrid">
+            <!-- Motion cards will be inserted here -->
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <!-- Modal for full details -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div class="modal-header">
+          <span class="modal-category" id="modalCategory"></span>
+          <h3 id="modalTitle"></h3>
+        </div>
+        <div class="modal-body">
+          <p class="modal-summary" id="modalSummary"></p>
+          <div class="modal-status" id="modalStatus"></div>
+          <div class="modal-tags" id="modalTags"></div>
+          <div class="modal-full-text" id="modalFullText"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

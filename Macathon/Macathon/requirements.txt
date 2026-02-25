@@ -1,0 +1,6 @@
+# Core runtime for Toronto tracker backend
+python-dotenv
+pydantic
+fastapi
+uvicorn[standard]
+google-genai

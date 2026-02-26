@@ -12,13 +12,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from .models import (
+  CategoryStats,
   ContentReportRequest,
   HealthResponse,
   MeetingDetail,
   MeetingOverview,
+  MeetingStats,
   Motion,
+  MotionReportSummary,
   PrewarmResponse,
   RefreshResponse,
+  RegionStats,
+  ReportsSummaryResponse,
+  StatsResponse,
+  StatusStats,
 )
 from .scraper_bridge import ScrapedMeetingFiles, load_scraped_from_disk, run_node_scraper
 from .extractor import build_meeting_detail_from_scraped
@@ -258,6 +265,70 @@ async def debug_meeting_codes() -> dict:
   return {"source": "none", "count": 0, "meeting_codes": []}
 
 
+@app.get("/api/stats", response_model=StatsResponse)
+async def stats() -> StatsResponse:
+  """Aggregate simple decision statistics across cached meetings."""
+  meetings_dir = CACHE_DIR / "meetings"
+  if not meetings_dir.exists():
+    return StatsResponse(by_category=[], by_region=[], by_status=[], by_meeting=[])
+
+  overviews = _load_meetings_cache() or []
+  code_to_overview = {m.meeting_code: m for m in overviews}
+
+  by_category: dict[str, int] = {}
+  by_region: dict[str, int] = {}
+  by_status: dict[str, int] = {}
+  by_meeting: dict[str, int] = {}
+
+  for path in meetings_dir.glob("*.json"):
+    try:
+      raw = json.loads(path.read_text(encoding="utf-8"))
+      detail = MeetingDetail.model_validate(raw)
+    except Exception:
+      continue
+
+    overview = code_to_overview.get(detail.meeting_code)
+    region = overview.region if overview and overview.region else "Unknown"
+    date = overview.date if overview and overview.date else "Unknown date"
+
+    motions = detail.motions or []
+    if not motions:
+      continue
+
+    by_meeting[detail.meeting_code] = by_meeting.get(detail.meeting_code, 0) + len(motions)
+
+    for motion in motions:
+      category = motion.category or "other"
+      status = motion.status or "OTHER"
+      by_category[category] = by_category.get(category, 0) + 1
+      by_region[region] = by_region.get(region, 0) + 1
+      by_status[status] = by_status.get(status, 0) + 1
+
+  category_stats = [
+    CategoryStats(category=k, decisions=v) for k, v in sorted(by_category.items(), key=lambda x: -x[1])
+  ]
+  region_stats = [
+    RegionStats(region=k, decisions=v) for k, v in sorted(by_region.items(), key=lambda x: -x[1])
+  ]
+  status_stats = [
+    StatusStats(status=k, decisions=v) for k, v in sorted(by_status.items(), key=lambda x: -x[1])
+  ]
+
+  meeting_stats: list[MeetingStats] = []
+  for code, total in by_meeting.items():
+    overview = code_to_overview.get(code)
+    date = overview.date if overview and overview.date else "Unknown date"
+    meeting_stats.append(MeetingStats(meeting_code=code, date=date, total_decisions=total))
+  meeting_stats.sort(key=lambda m: m.date)
+
+  return StatsResponse(
+    by_category=category_stats,
+    by_region=region_stats,
+    by_status=status_stats,
+    by_meeting=meeting_stats,
+  )
+
+
 def _with_detail_cached(overviews: List[MeetingOverview]) -> List[MeetingOverview]:
   """Set detail_cached on each overview based on whether meeting detail file exists."""
   return [
@@ -452,5 +523,41 @@ async def submit_report(body: ContentReportRequest) -> dict:
   payload = body.model_dump()
   _append_report(payload)
   return {"status": "submitted"}
+
+
+@app.get("/api/reports/summary", response_model=ReportsSummaryResponse)
+async def reports_summary(meeting_code: Optional[str] = None) -> ReportsSummaryResponse:
+  """Summarize incorrect-information reports per motion."""
+  if not REPORTS_PATH.exists():
+    return ReportsSummaryResponse(by_motion=[])
+
+  try:
+    raw = json.loads(REPORTS_PATH.read_text(encoding="utf-8"))
+  except Exception:
+    return ReportsSummaryResponse(by_motion=[])
+
+  counts: dict[tuple[str, int], int] = {}
+  if isinstance(raw, list):
+    for entry in raw:
+      try:
+        reason = entry.get("reason")
+        mc = entry.get("meeting_code")
+        mid = entry.get("motion_id")
+      except AttributeError:
+        continue
+      if reason != "incorrect_information":
+        continue
+      if not mc or mid is None:
+        continue
+      if meeting_code and mc != meeting_code:
+        continue
+      key = (mc, int(mid))
+      counts[key] = counts.get(key, 0) + 1
+
+  by_motion = [
+    MotionReportSummary(meeting_code=mc, motion_id=mid, incorrect_reports=count)
+    for (mc, mid), count in counts.items()
+  ]
+  return ReportsSummaryResponse(by_motion=by_motion)
 
 

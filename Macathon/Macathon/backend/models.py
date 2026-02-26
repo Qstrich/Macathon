@@ -51,3 +51,41 @@ class ContentReportRequest(BaseModel):
   reason: str  # "incorrect_information" | "inappropriate" | "other"
   comment: Optional[str] = None
 
+
+class CategoryStats(BaseModel):
+  category: str
+  decisions: int
+
+
+class RegionStats(BaseModel):
+  region: str
+  decisions: int
+
+
+class StatusStats(BaseModel):
+  status: str
+  decisions: int
+
+
+class MeetingStats(BaseModel):
+  meeting_code: str
+  date: str
+  total_decisions: int
+
+
+class StatsResponse(BaseModel):
+  by_category: List[CategoryStats]
+  by_region: List[RegionStats]
+  by_status: List[StatusStats]
+  by_meeting: List[MeetingStats]
+
+
+class MotionReportSummary(BaseModel):
+  meeting_code: str
+  motion_id: int
+  incorrect_reports: int
+
+
+class ReportsSummaryResponse(BaseModel):
+  by_motion: List[MotionReportSummary]
+

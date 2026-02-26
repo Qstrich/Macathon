@@ -71,6 +71,11 @@
             </div>
           </div>
 
+          <div class="view-toggle">
+            <button type="button" id="viewDecisionsBtn" class="toggle-btn active" data-view="decisions">Decisions</button>
+            <button type="button" id="viewTrendsBtn" class="toggle-btn" data-view="trends">Trends</button>
+          </div>
+
           <!-- Filter & Sort Toolbar -->
           <div id="filterBar" class="filter-bar hidden">
             <div class="filter-group">
@@ -88,11 +93,19 @@
                 <option value="title">Title (A-Z)</option>
               </select>
             </div>
+            <div class="search-group">
+              <label class="filter-label" for="searchInput">Search</label>
+              <input id="searchInput" class="search-input" type="text" placeholder="Search decisions in this meeting..." />
+            </div>
             <div class="results-count" id="resultsCount"></div>
           </div>
 
           <div class="motions-grid" id="motionsGrid">
             <!-- Motion cards will be inserted here -->
+          </div>
+
+          <div id="trendsSection" class="trends-section hidden">
+            <!-- Trends content will be rendered here -->
           </div>
         </section>
       </main>

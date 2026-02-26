@@ -8,6 +8,17 @@ let activeMeetingCode = null;
 let activeRegion = 'all';
 let loadingLongTimeout = null;
 let currentModalMotion = null;
+let activeSearchQuery = '';
+let searchDebounceTimeout = null;
+let activeView = 'decisions';
+let statsCache = null;
+let reportCountsByMotionId = {};
+
+function getDisplayTitle(title) {
+  if (!title) return '';
+  const m = title.match(/^(\d{4}-\d{2}-\d{2})\s*-\s*(.+)$/);
+  return m ? m[2] : title;
+}
 
 // Initial load: fetch meetings and select the newest one
 window.addEventListener('DOMContentLoaded', () => {
@@ -35,6 +46,26 @@ document.getElementById('refreshFromCouncilBtn').addEventListener('click', () =>
 document.getElementById('preloadAllBtn').addEventListener('click', () => {
   preloadAllMeetings();
 });
+
+document.getElementById('viewDecisionsBtn').addEventListener('click', () => {
+  setActiveView('decisions');
+});
+
+document.getElementById('viewTrendsBtn').addEventListener('click', () => {
+  setActiveView('trends');
+});
+
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+  searchInput.addEventListener('input', (e) => {
+    const value = (e.target.value || '').toLowerCase();
+    if (searchDebounceTimeout) clearTimeout(searchDebounceTimeout);
+    searchDebounceTimeout = setTimeout(() => {
+      activeSearchQuery = value;
+      renderFilteredMotions();
+    }, 250);
+  });
+}
 
 async function initTimeline() {
   showLoading();
@@ -64,6 +95,30 @@ async function initTimeline() {
     showError(msg + (msg.includes('fetch') ? ' Is the backend running at http://localhost:8000?' : ''));
   } finally {
     hideLoading();
+  }
+}
+
+function setActiveView(view) {
+  if (view === activeView) return;
+  activeView = view;
+  const decisionsBtn = document.getElementById('viewDecisionsBtn');
+  const trendsBtn = document.getElementById('viewTrendsBtn');
+  decisionsBtn.classList.toggle('active', view === 'decisions');
+  trendsBtn.classList.toggle('active', view === 'trends');
+
+  const filterBar = document.getElementById('filterBar');
+  const motionsGrid = document.getElementById('motionsGrid');
+  const trendsSection = document.getElementById('trendsSection');
+
+  if (view === 'decisions') {
+    filterBar.classList.remove('hidden');
+    motionsGrid.classList.remove('hidden');
+    trendsSection.classList.add('hidden');
+  } else {
+    filterBar.classList.add('hidden');
+    motionsGrid.classList.add('hidden');
+    trendsSection.classList.remove('hidden');
+    loadStatsAndRenderTrends();
   }
 }
 
@@ -132,6 +187,73 @@ function setLoadingMessage(text) {
   if (el) el.textContent = text;
 }
 
+async function loadStatsAndRenderTrends() {
+  const container = document.getElementById('trendsSection');
+  if (!currentMotions || currentMotions.length === 0) {
+    if (container) {
+      container.innerHTML = '<p style="font-size:0.85rem;color:#64748b;">No decisions yet for this meeting.</p>';
+    }
+    return;
+  }
+
+  const byCategoryCounts = {};
+  const byStatusCounts = {};
+
+  currentMotions.forEach((m) => {
+    const cat = m.category || 'other';
+    const status = m.status || 'OTHER';
+    byCategoryCounts[cat] = (byCategoryCounts[cat] || 0) + 1;
+    byStatusCounts[status] = (byStatusCounts[status] || 0) + 1;
+  });
+
+  const byCategory = Object.entries(byCategoryCounts).map(([category, decisions]) => ({ category, decisions }));
+  const byStatus = Object.entries(byStatusCounts).map(([status, decisions]) => ({ status, decisions }));
+
+  const stats = {
+    by_category: byCategory,
+    by_region: [],
+    by_status: byStatus,
+  };
+
+  renderTrends(stats);
+}
+
+function renderTrends(stats) {
+  const container = document.getElementById('trendsSection');
+  if (!container) return;
+
+  const byCategory = stats.by_category || [];
+  const byRegion = stats.by_region || [];
+  const byStatus = stats.by_status || [];
+
+  const renderList = (items, labelKey, valueKey) => {
+    if (!items.length) {
+      return '<p style="font-size:0.85rem;color:#64748b;">No data yet. Try preloading some meetings.</p>';
+    }
+    return `<ul class="trend-list">${items
+      .map(
+        (item) =>
+          `<li><span>${escapeHtml(item[labelKey] || '')}</span><span>${item[valueKey] ?? 0}</span></li>`
+      )
+      .join('')}</ul>`;
+  };
+
+  container.innerHTML = `
+    <div class="trend-group">
+      <h3>Decisions by category</h3>
+      ${renderList(byCategory, 'category', 'decisions')}
+    </div>
+    <div class="trend-group">
+      <h3>Decisions by region</h3>
+      ${renderList(byRegion, 'region', 'decisions')}
+    </div>
+    <div class="trend-group">
+      <h3>Decisions by status</h3>
+      ${renderList(byStatus, 'status', 'decisions')}
+    </div>
+  `;
+}
+
 function renderRegionFilters(meetingsList) {
   const container = document.getElementById('regionFilters');
   if (!container) return;
@@ -173,17 +295,43 @@ function renderTimeline(meetingsList) {
   const container = document.getElementById('timelineList');
   container.innerHTML = '';
 
-  const filtered =
+  const filteredByRegion =
     activeRegion === 'all'
       ? meetingsList
       : meetingsList.filter((m) => (m.region || 'City-wide') === activeRegion);
+
+  // Hide meetings that we know have no motions after extraction:
+  // - detail_cached is true (we've already run Gemini)
+  // - motion_count is 0 or missing
+  const filtered = (filteredByRegion || []).filter((m) => {
+    const motionCount = m.motion_count || 0;
+    if (m.detail_cached === true && motionCount === 0) {
+      return false;
+    }
+    return true;
+  });
 
   if (!filtered || filtered.length === 0) {
     container.innerHTML = '<p class="timeline-empty">No recent meetings found.</p>';
     return;
   }
 
-  filtered.forEach((meeting) => {
+  const parseDate = (d) => {
+    if (!d) return 0;
+    // Expecting YYYY-MM-DD; fallback to Date.parse
+    const isoMatch = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      return Date.parse(d);
+    }
+    const t = Date.parse(d);
+    return Number.isNaN(t) ? 0 : t;
+  };
+
+  const sortedMeetings = [...filtered].sort(
+    (a, b) => parseDate(b.date || '') - parseDate(a.date || ''),
+  );
+
+  sortedMeetings.forEach((meeting) => {
     const item = document.createElement('button');
     item.className = 'timeline-item';
     item.dataset.meetingCode = meeting.meeting_code;
@@ -215,7 +363,7 @@ function renderTimeline(meetingsList) {
       <div class="timeline-marker"></div>
       <div class="timeline-content">
         <div class="timeline-date">${escapeHtml(meeting.date || '')}</div>
-        <div class="timeline-title">${escapeHtml(meeting.title || '')}</div>
+        <div class="timeline-title">${escapeHtml(getDisplayTitle(meeting.title || ''))}</div>
         <div class="timeline-meta">
           <span class="timeline-motion-count">${escapeHtml(motionCountText)}</span>
           <div class="timeline-topics">${topicsPills}</div>
@@ -291,12 +439,33 @@ async function loadMeeting(meetingCode) {
       };
       renderTimeline(meetings);
     }
+    await loadReportSummary(data.meeting_code);
   } catch (error) {
     console.error('Error loading meeting:', error);
     const message = error.message || 'Could not load meeting';
     showError(message);
   } finally {
     hideLoading();
+  }
+}
+
+async function loadReportSummary(meetingCode) {
+  reportCountsByMotionId = {};
+  try {
+    const response = await fetch(`${API_URL}/api/reports/summary?meeting_code=${encodeURIComponent(meetingCode)}`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || `Reports summary failed (${response.status})`);
+    }
+    const byMotion = data.by_motion || [];
+    byMotion.forEach((item) => {
+      if (item.motion_id != null) {
+        reportCountsByMotionId[item.motion_id] = item.incorrect_reports || 0;
+      }
+    });
+    renderFilteredMotions();
+  } catch (error) {
+    console.error('Failed to load reports summary:', error);
   }
 }
 
@@ -340,10 +509,11 @@ function displayResults(data) {
   // Update header
   document.getElementById('cityName').textContent = 'Toronto City Council';
 
+  const displayTitle = getDisplayTitle(title || '');
   const meetingInfo =
     (date && date !== 'Unknown date'
       ? `Meeting Date: ${date}`
-      : 'Recent Council Meeting') + (title ? ` • ${title}` : '');
+      : 'Recent Council Meeting') + (displayTitle ? ` • ${displayTitle}` : '');
 
   document.getElementById('meetingInfo').textContent = meetingInfo;
 
@@ -424,6 +594,21 @@ function renderFilteredMotions() {
     filtered = filtered.filter(m => m.category?.toLowerCase() === activeCategory);
   }
 
+  // Full-text search within this meeting
+  const query = (activeSearchQuery || '').trim();
+  if (query) {
+    filtered = filtered.filter((m) => {
+      const parts = [
+        m.title || '',
+        m.summary || '',
+        m.full_text || '',
+        (m.impact_tags || []).join(' '),
+      ];
+      const haystack = parts.join(' ').toLowerCase();
+      return haystack.includes(query);
+    });
+  }
+
   // Sort
   if (activeSort === 'category') {
     filtered.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
@@ -437,9 +622,12 @@ function renderFilteredMotions() {
   // Update count
   const total = currentMotions.length;
   const shown = filtered.length;
-  document.getElementById('resultsCount').textContent = activeCategory === 'all'
-    ? `${total} decision${total !== 1 ? 's' : ''}`
-    : `${shown} of ${total} decisions`;
+  const hasCategoryFilter = activeCategory !== 'all';
+  const hasSearch = !!query;
+  document.getElementById('resultsCount').textContent =
+    !hasCategoryFilter && !hasSearch
+      ? `${total} decision${total !== 1 ? 's' : ''}`
+      : `${shown} of ${total} decisions`;
 
   // Render grid
   const grid = document.getElementById('motionsGrid');
@@ -463,11 +651,16 @@ function createMotionCard(motion, index) {
 
   const statusClass = `status-${motion.status.toLowerCase()}`;
   const categoryClass = `category-${motion.category.toLowerCase()}`;
+   const reportCount = reportCountsByMotionId[motion.id] || 0;
+   const reportBadge = reportCount > 0
+     ? `<span class="card-report-badge">Reported ×${reportCount}</span>`
+     : '';
 
   card.innerHTML = `
     <div class="card-header">
       <span class="card-category ${categoryClass}">${motion.category}</span>
       <span class="card-status ${statusClass}">${motion.status}</span>
+      ${reportBadge}
     </div>
     <h3 class="card-title">${escapeHtml(motion.title)}</h3>
     <p class="card-summary">${escapeHtml(motion.summary)}</p>
@@ -579,6 +772,12 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
     document.getElementById('reportForm').classList.add('hidden');
     document.getElementById('reportConfirmation').classList.remove('hidden');
     setTimeout(closeReportModal, 1500);
+    // Optimistically bump report count for this motion when reason is incorrect_information
+    if (reason === 'incorrect_information' && currentModalMotion?.id != null) {
+      const id = currentModalMotion.id;
+      reportCountsByMotionId[id] = (reportCountsByMotionId[id] || 0) + 1;
+      renderFilteredMotions();
+    }
   } catch (err) {
     console.error('Report submit failed:', err);
     alert(err.message || 'Could not submit report');

@@ -464,6 +464,24 @@ header {
   min-width: 0;
 }
 
+.search-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 7px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #0f3460;
+}
+
 .filter-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -531,6 +549,58 @@ header {
   margin-left: auto;
 }
 
+.view-toggle {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 10px;
+}
+
+.toggle-btn {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  color: #475569;
+}
+
+.toggle-btn.active {
+  background: #0f3460;
+  color: #ffffff;
+  border-color: #0f3460;
+}
+
+.trends-section {
+  margin-top: 8px;
+}
+
+.trend-group {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.trend-group h3 {
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+  color: #1e293b;
+}
+
+.trend-list {
+  list-style: none;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.trend-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
 /* Motions count bar */
 .motions-count {
   font-size: 0.85rem;
@@ -566,6 +636,16 @@ header {
   align-items: flex-start;
   margin-bottom: 12px;
   gap: 8px;
+}
+
+.card-report-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  margin-left: 6px;
 }
 
 .card-category {

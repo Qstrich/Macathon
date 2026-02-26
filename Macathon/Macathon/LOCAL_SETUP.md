@@ -132,7 +132,19 @@ before starting `uvicorn`. With scraper output already on disk, meeting details 
 
 ---
 
-## 6. Quick checklist
+## 6. Getting the most recent data and in-app actions
+
+**How we get the most recent:** The app gets council content from the City of Toronto council site. The Node scraper visits the council "Recent meetings" page, collects whatever meetings are currently listed there, and scrapes each meeting’s Decisions and Minutes. To update the app’s list with the latest meetings, run the scraper again (e.g. `node scrape-content.js` in `scraper/`) or use **Refresh from council** in the app when enabled.
+
+**Refresh from council:** In the timeline column, the **Refresh from council** button re-runs the Playwright scraper to fetch the latest meetings from the council site. This can take 2+ minutes and requires `ALLOW_LIVE_EXTRACTION=true` (or the backend returns 403). After it finishes, the meeting list is updated with whatever is currently on the council Recent table.
+
+**Preload all meetings:** The **Preload all meetings** button calls the backend to build and cache detail for every meeting in the current list that does not yet have cached detail. After it finishes, no meeting shows "—" in the list; all show real decision counts and topics. This can take several minutes if many meetings are uncached.
+
+**Content report:** Users can flag incorrect or inappropriate content from the motion detail modal via **Report this content**. Reports are stored in `data/reports.json` (with timestamp) for later review; the app does not display or act on them.
+
+---
+
+## 7. Quick checklist
 
 | Step | Command / action |
 |------|-------------------|
@@ -147,7 +159,7 @@ before starting `uvicorn`. With scraper output already on disk, meeting details 
 
 ---
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 - **“No module named 'backend'”**  
   Run `uvicorn` from the **project root** (`Macathon\Macathon`), not from `backend` or `frontend`.

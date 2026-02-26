@@ -11,7 +11,15 @@ logger = logging.getLogger("backend")
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from .models import HealthResponse, MeetingDetail, MeetingOverview, Motion
+from .models import (
+  ContentReportRequest,
+  HealthResponse,
+  MeetingDetail,
+  MeetingOverview,
+  Motion,
+  PrewarmResponse,
+  RefreshResponse,
+)
 from .scraper_bridge import ScrapedMeetingFiles, load_scraped_from_disk, run_node_scraper
 from .extractor import build_meeting_detail_from_scraped
 
@@ -21,6 +29,7 @@ DATA_DIR = BASE_DIR / "data"
 CACHE_DIR = DATA_DIR / "cache"
 MEETINGS_CACHE_PATH = CACHE_DIR / "meetings_index.json"
 SCRAPED_INDEX_PATH = CACHE_DIR / "scraped_meetings.json"
+REPORTS_PATH = DATA_DIR / "reports.json"
 
 app = FastAPI(title="Toronto City Council Tracker API")
 
@@ -249,12 +258,20 @@ async def debug_meeting_codes() -> dict:
   return {"source": "none", "count": 0, "meeting_codes": []}
 
 
+def _with_detail_cached(overviews: List[MeetingOverview]) -> List[MeetingOverview]:
+  """Set detail_cached on each overview based on whether meeting detail file exists."""
+  return [
+    m.model_copy(update={"detail_cached": _get_meeting_detail_path(m.meeting_code).exists()})
+    for m in overviews
+  ]
+
+
 @app.get("/api/meetings", response_model=List[MeetingOverview])
 async def list_meetings() -> List[MeetingOverview]:
   # 1. Prefer cache so reloads never re-run the scraper
   cached = _load_meetings_cache()
   if cached:
-    return list(reversed(cached))
+    return list(reversed(_with_detail_cached(cached)))
 
   # 2. Use existing scraper output if present (no browser run)
   scraped = load_scraped_from_disk()
@@ -262,7 +279,7 @@ async def list_meetings() -> List[MeetingOverview]:
     overviews = _build_meeting_overviews(scraped)
     _save_meetings_cache(overviews)
     _save_scraped_index(scraped)
-    return list(reversed(overviews))
+    return list(reversed(_with_detail_cached(overviews)))
 
   # 3. Optionally allow live extraction when explicitly enabled (development/demo)
   if ALLOW_LIVE_EXTRACTION:
@@ -270,7 +287,7 @@ async def list_meetings() -> List[MeetingOverview]:
     overviews = _build_meeting_overviews(scraped)
     _save_meetings_cache(overviews)
     _save_scraped_index(scraped)
-    return list(reversed(overviews))
+    return list(reversed(_with_detail_cached(overviews)))
 
   logger.warning(
     "meetings_index.json is missing, no scraper output on disk, and ALLOW_LIVE_EXTRACTION is false. "
@@ -353,5 +370,87 @@ async def get_meeting(meeting_code: str) -> MeetingDetail:
   except Exception as e:
     logger.exception("get_meeting failed for %s", meeting_code)
     raise HTTPException(status_code=500, detail=f"Server error loading meeting: {str(e)}")
+
+
+@app.post("/api/refresh", response_model=RefreshResponse)
+async def refresh_from_council() -> RefreshResponse:
+  """Re-run the Node scraper to get the latest meetings from the council site. Requires ALLOW_LIVE_EXTRACTION=true."""
+  if not ALLOW_LIVE_EXTRACTION:
+    raise HTTPException(
+      status_code=403,
+      detail="Refresh from council is disabled. Set ALLOW_LIVE_EXTRACTION=true to enable.",
+    )
+  scraped = run_node_scraper()
+  overviews = _build_meeting_overviews(scraped)
+  _save_meetings_cache(overviews)
+  _save_scraped_index(scraped)
+  return RefreshResponse(meetings_count=len(overviews))
+
+
+@app.post("/api/prewarm", response_model=PrewarmResponse)
+async def prewarm_all() -> PrewarmResponse:
+  """Build and cache detail for every meeting in the current list that does not yet have cached detail."""
+  scraped = _load_scraped_index()
+  if not scraped:
+    scraped = load_scraped_from_disk()
+  if not scraped:
+    raise HTTPException(
+      status_code=404,
+      detail="No scraper output found. Run the scraper or refresh from council first.",
+    )
+  overviews = _load_meetings_cache() or _build_meeting_overviews(scraped)
+  prewarmed = 0
+  code_to_overview = {m.meeting_code: m for m in overviews}
+  for idx, raw in enumerate(scraped, start=1):
+    meeting_code = _derive_meeting_code(raw.meeting_text, idx)
+    if _load_meeting_detail(meeting_code):
+      continue
+    overview = code_to_overview.get(
+      meeting_code,
+      MeetingOverview(
+        meeting_code=meeting_code,
+        title=raw.meeting_text,
+        date="Unknown date",
+        topics=[],
+        motion_count=0,
+        region=None,
+      ),
+    )
+    try:
+      detail = build_meeting_detail_from_scraped(meeting_code, overview, raw)
+      _save_meeting_detail(detail)
+      prewarmed += 1
+      existing = _load_meetings_cache() or overviews
+      updated = [m for m in existing if m.meeting_code != meeting_code]
+      updated.append(overview)
+      _save_meetings_cache(updated)
+    except Exception as e:
+      logger.warning("prewarm failed for %s: %s", meeting_code, e)
+  return PrewarmResponse(prewarmed=prewarmed)
+
+
+def _append_report(payload: dict) -> None:
+  _ensure_dirs()
+  reports: List[dict] = []
+  if REPORTS_PATH.exists():
+    try:
+      reports = json.loads(REPORTS_PATH.read_text(encoding="utf-8"))
+      if not isinstance(reports, list):
+        reports = []
+    except Exception:
+      reports = []
+  entry = {**payload, "timestamp": datetime.utcnow().isoformat() + "Z"}
+  reports.append(entry)
+  REPORTS_PATH.write_text(json.dumps(reports, indent=2), encoding="utf-8")
+
+
+@app.post("/api/reports", status_code=201)
+async def submit_report(body: ContentReportRequest) -> dict:
+  """Record a content report (incorrect or inappropriate content) for later review."""
+  if body.reason not in ("incorrect_information", "inappropriate", "other"):
+    raise HTTPException(status_code=400, detail="reason must be one of: incorrect_information, inappropriate, other")
+  payload = body.model_dump()
+  _append_report(payload)
+  return {"status": "submitted"}
 
 

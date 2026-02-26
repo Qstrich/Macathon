@@ -21,6 +21,7 @@ class MeetingOverview(BaseModel):
   topics: List[str]
   motion_count: int
   region: Optional[str] = None
+  detail_cached: Optional[bool] = None  # True if meeting detail is in cache (motion count/topics known)
 
 
 class MeetingDetail(BaseModel):
@@ -34,4 +35,19 @@ class MeetingDetail(BaseModel):
 class HealthResponse(BaseModel):
   status: str
   message: str
+
+
+class RefreshResponse(BaseModel):
+  meetings_count: int
+
+
+class PrewarmResponse(BaseModel):
+  prewarmed: int
+
+
+class ContentReportRequest(BaseModel):
+  meeting_code: str
+  motion_id: Optional[int] = None
+  reason: str  # "incorrect_information" | "inappropriate" | "other"
+  comment: Optional[str] = None
 

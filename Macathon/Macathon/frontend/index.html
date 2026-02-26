@@ -26,6 +26,10 @@
           <h2>Meetings</h2>
           <p class="timeline-subtitle">Recent Toronto City Council meetings</p>
         </div>
+        <div id="timelineActions" class="timeline-actions">
+          <button type="button" id="refreshFromCouncilBtn" class="action-btn" title="Re-fetch the latest meetings from the council site (2+ min)">Refresh from council</button>
+          <button type="button" id="preloadAllBtn" class="action-btn" title="Pre-cache all meetings so none show —">Preload all meetings</button>
+        </div>
         <div id="regionFilters" class="region-filter-bar">
           <!-- Region filter buttons will be injected here -->
         </div>
@@ -41,6 +45,7 @@
           <div class="spinner"></div>
           <p class="loading-text">Fetching council meeting data...</p>
           <p class="loading-subtext">This may take a moment while we read the minutes.</p>
+          <p id="loadingSubtextLong" class="loading-subtext hidden">First time opening this meeting may take 30–60 seconds.</p>
         </div>
 
         <!-- Error State -->
@@ -106,7 +111,33 @@
           <div class="modal-status" id="modalStatus"></div>
           <div class="modal-tags" id="modalTags"></div>
           <div class="modal-full-text" id="modalFullText"></div>
+          <button type="button" id="reportMotionBtn" class="report-btn">Report this content</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Report modal -->
+    <div id="reportModal" class="modal hidden">
+      <div class="modal-content report-modal-content">
+        <button type="button" class="modal-close" id="reportModalClose">×</button>
+        <h3 class="report-modal-title">Report content</h3>
+        <p class="report-modal-desc">Flag incorrect or inappropriate content for review.</p>
+        <form id="reportForm" class="report-form">
+          <label class="report-label">Reason</label>
+          <select id="reportReason" class="report-select" required>
+            <option value="">Select a reason</option>
+            <option value="incorrect_information">Incorrect information</option>
+            <option value="inappropriate">Inappropriate content</option>
+            <option value="other">Other</option>
+          </select>
+          <label class="report-label">Comment (optional)</label>
+          <textarea id="reportComment" class="report-textarea" rows="3" placeholder="Add details if helpful"></textarea>
+          <div class="report-actions">
+            <button type="button" class="action-btn" id="reportCancelBtn">Cancel</button>
+            <button type="submit" class="action-btn report-submit">Submit report</button>
+          </div>
+        </form>
+        <p id="reportConfirmation" class="report-confirmation hidden">Report submitted. Thank you.</p>
       </div>
     </div>
   </div>

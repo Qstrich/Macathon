@@ -6,6 +6,8 @@ let activeSort = 'default';
 let meetings = [];
 let activeMeetingCode = null;
 let activeRegion = 'all';
+let loadingLongTimeout = null;
+let currentModalMotion = null;
 
 // Initial load: fetch meetings and select the newest one
 window.addEventListener('DOMContentLoaded', () => {
@@ -24,6 +26,14 @@ document.getElementById('retryBtn').addEventListener('click', () => {
   } else if (meetings.length > 0) {
     loadMeeting(meetings[0].meeting_code);
   }
+});
+
+document.getElementById('refreshFromCouncilBtn').addEventListener('click', () => {
+  refreshFromCouncil();
+});
+
+document.getElementById('preloadAllBtn').addEventListener('click', () => {
+  preloadAllMeetings();
 });
 
 async function initTimeline() {
@@ -55,6 +65,71 @@ async function initTimeline() {
   } finally {
     hideLoading();
   }
+}
+
+async function refreshFromCouncil() {
+  const btn = document.getElementById('refreshFromCouncilBtn');
+  btn.disabled = true;
+  setLoadingMessage('Fetching latest meetings from council… This may take 2+ minutes.');
+  showLoading();
+  document.getElementById('loadingSubtextLong')?.classList.add('hidden');
+  hideError();
+  try {
+    const response = await fetch(`${API_URL}/api/refresh`, { method: 'POST' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || `Refresh failed (${response.status})`);
+    }
+    const response2 = await fetch(`${API_URL}/api/meetings`);
+    const listData = await response2.json();
+    if (!response2.ok) throw new Error(listData.detail || 'Failed to fetch list');
+    meetings = listData;
+    renderRegionFilters(meetings);
+    renderTimeline(meetings);
+    if (meetings.length > 0 && !activeMeetingCode) {
+      selectTimelineItem(meetings[0].meeting_code);
+      await loadMeeting(meetings[0].meeting_code);
+    }
+  } catch (error) {
+    console.error('Refresh failed:', error);
+    showError(error.message || 'Refresh from council failed');
+  } finally {
+    hideLoading();
+    btn.disabled = false;
+  }
+}
+
+async function preloadAllMeetings() {
+  const btn = document.getElementById('preloadAllBtn');
+  btn.disabled = true;
+  setLoadingMessage('Preloading all meetings… This may take several minutes.');
+  showLoading();
+  document.getElementById('loadingSubtextLong')?.classList.add('hidden');
+  hideError();
+  try {
+    const response = await fetch(`${API_URL}/api/prewarm`, { method: 'POST' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || `Prewarm failed (${response.status})`);
+    }
+    const response2 = await fetch(`${API_URL}/api/meetings`);
+    const listData = await response2.json();
+    if (!response2.ok) throw new Error(listData.detail || 'Failed to fetch list');
+    meetings = listData;
+    renderRegionFilters(meetings);
+    renderTimeline(meetings);
+  } catch (error) {
+    console.error('Prewarm failed:', error);
+    showError(error.message || 'Preload all meetings failed');
+  } finally {
+    hideLoading();
+    btn.disabled = false;
+  }
+}
+
+function setLoadingMessage(text) {
+  const el = document.querySelector('.loading-text');
+  if (el) el.textContent = text;
 }
 
 function renderRegionFilters(meetingsList) {
@@ -113,15 +188,28 @@ function renderTimeline(meetingsList) {
     item.className = 'timeline-item';
     item.dataset.meetingCode = meeting.meeting_code;
 
-    const topicsPills = (meeting.topics || [])
-      .slice(0, 5)
-      .map(
-        (topic) =>
-          `<span class="timeline-topic-pill">${escapeHtml(
-            topic.charAt(0).toUpperCase() + topic.slice(1)
-          )}</span>`
-      )
-      .join('');
+    const isUncached =
+      meeting.detail_cached === false ||
+      (meeting.detail_cached !== true &&
+        (!meeting.motion_count || meeting.motion_count === 0) &&
+        (!meeting.topics || meeting.topics.length === 0));
+
+    const motionCountText = isUncached
+      ? '—'
+      : `${meeting.motion_count || 0} decisions`;
+
+    const topicsPills =
+      isUncached
+        ? ''
+        : (meeting.topics || [])
+            .slice(0, 5)
+            .map(
+              (topic) =>
+                `<span class="timeline-topic-pill">${escapeHtml(
+                  topic.charAt(0).toUpperCase() + topic.slice(1)
+                )}</span>`
+            )
+            .join('');
 
     item.innerHTML = `
       <div class="timeline-marker"></div>
@@ -129,7 +217,7 @@ function renderTimeline(meetingsList) {
         <div class="timeline-date">${escapeHtml(meeting.date || '')}</div>
         <div class="timeline-title">${escapeHtml(meeting.title || '')}</div>
         <div class="timeline-meta">
-          <span class="timeline-motion-count">${meeting.motion_count || 0} decisions</span>
+          <span class="timeline-motion-count">${escapeHtml(motionCountText)}</span>
           <div class="timeline-topics">${topicsPills}</div>
         </div>
       </div>
@@ -158,7 +246,13 @@ function selectTimelineItem(meetingCode) {
 }
 
 async function loadMeeting(meetingCode) {
+  setLoadingMessage('Fetching council meeting data...');
   showLoading();
+  document.getElementById('loadingSubtextLong')?.classList.add('hidden');
+  if (loadingLongTimeout) clearTimeout(loadingLongTimeout);
+  loadingLongTimeout = setTimeout(() => {
+    document.getElementById('loadingSubtextLong')?.classList.remove('hidden');
+  }, 2000);
   hideError();
   hideResults();
   activeCategory = 'all';
@@ -183,6 +277,20 @@ async function loadMeeting(meetingCode) {
 
     currentMotions = data.motions || [];
     displayResults(data);
+
+    // Update the meeting in the list so motion count and topics show without refresh
+    const motions = data.motions || [];
+    const topics = [...new Set(motions.map((m) => m.category).filter(Boolean))].sort();
+    const idx = meetings.findIndex((m) => m.meeting_code === data.meeting_code);
+    if (idx !== -1) {
+      meetings[idx] = {
+        ...meetings[idx],
+        motion_count: motions.length,
+        topics,
+        detail_cached: true,
+      };
+      renderTimeline(meetings);
+    }
   } catch (error) {
     console.error('Error loading meeting:', error);
     const message = error.message || 'Could not load meeting';
@@ -198,6 +306,11 @@ function showLoading() {
 }
 
 function hideLoading() {
+  if (loadingLongTimeout) {
+    clearTimeout(loadingLongTimeout);
+    loadingLongTimeout = null;
+  }
+  document.getElementById('loadingSubtextLong')?.classList.add('hidden');
   document.getElementById('loadingState').classList.add('hidden');
 }
 
@@ -370,6 +483,7 @@ function createMotionCard(motion, index) {
 
 // Open modal with full details
 function openModal(motion) {
+  currentModalMotion = motion;
   const modal = document.getElementById('modal');
   const categoryClass = `category-${motion.category.toLowerCase()}`;
   const statusClass = `status-${motion.status.toLowerCase()}`;
@@ -415,6 +529,59 @@ function closeModal() {
 document.getElementById('modal').addEventListener('click', (e) => {
   if (e.target.id === 'modal') {
     closeModal();
+  }
+});
+
+// Report modal
+function openReportModal() {
+  if (!activeMeetingCode || !currentModalMotion) return;
+  document.getElementById('reportForm').classList.remove('hidden');
+  document.getElementById('reportConfirmation').classList.add('hidden');
+  document.getElementById('reportReason').value = '';
+  document.getElementById('reportComment').value = '';
+  document.getElementById('reportModal').classList.remove('hidden');
+}
+
+function closeReportModal() {
+  document.getElementById('reportModal').classList.add('hidden');
+}
+
+document.getElementById('reportMotionBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openReportModal();
+});
+
+document.getElementById('reportModalClose').addEventListener('click', closeReportModal);
+document.getElementById('reportCancelBtn').addEventListener('click', closeReportModal);
+
+document.getElementById('reportModal').addEventListener('click', (e) => {
+  if (e.target.id === 'reportModal') closeReportModal();
+});
+
+document.getElementById('reportForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const reason = document.getElementById('reportReason').value;
+  const comment = document.getElementById('reportComment').value.trim() || null;
+  if (!reason) return;
+  try {
+    const response = await fetch(`${API_URL}/api/reports`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        meeting_code: activeMeetingCode,
+        motion_id: currentModalMotion.id,
+        reason,
+        comment,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || 'Report failed');
+    document.getElementById('reportForm').classList.add('hidden');
+    document.getElementById('reportConfirmation').classList.remove('hidden');
+    setTimeout(closeReportModal, 1500);
+  } catch (err) {
+    console.error('Report submit failed:', err);
+    alert(err.message || 'Could not submit report');
   }
 });
 

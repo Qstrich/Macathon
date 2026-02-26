@@ -56,7 +56,8 @@ def refresh_cache(overviews_only: bool = False) -> None:
   if overviews_only:
     return
 
-  # Build and persist MeetingDetail for each meeting
+  # Build and persist MeetingDetail for each meeting, updating overviews with
+  # accurate motion_count/topics so meetings_index.json matches the detail cache.
   from .main import _derive_meeting_code, _save_meeting_detail  # type: ignore[attr-defined]
 
   code_to_overview = {m.meeting_code: m for m in overviews}
@@ -74,11 +75,15 @@ def refresh_cache(overviews_only: bool = False) -> None:
         region=None,
       ),
     )
+    code_to_overview[meeting_code] = overview
+
     logger.info("Building detail for %s", meeting_code)
     detail = build_meeting_detail_from_scraped(meeting_code, overview, raw)
     _save_meeting_detail(detail)
 
-  logger.info("Finished building MeetingDetail cache for %d meetings.", len(scraped))
+  # Persist updated overviews (with motion_count/topics) back to meetings_index.json
+  backend_main._save_meetings_cache(list(code_to_overview.values()))  # type: ignore[attr-defined]
+  logger.info("Finished building MeetingDetail cache and updated meetings_index.json for %d meetings.", len(scraped))
 
 
 def main() -> None:

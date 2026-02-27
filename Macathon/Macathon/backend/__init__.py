@@ -1,1 +1,1 @@
-# Backend package for Toronto City Council Tracker API
+# Backend package for Council Digest API

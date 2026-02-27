@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8000';
+const API_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.apiUrl) || 'http://localhost:8000';
 
 let currentMotions = [];
 let activeCategory = 'all';
@@ -20,8 +20,18 @@ function getDisplayTitle(title) {
   return m ? m[2] : title;
 }
 
+// Show admin actions only when URL has ?admin=1 (or &admin=1)
+function initAdminVisibility() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('admin') === '1') {
+    const el = document.getElementById('timelineActions');
+    if (el) el.classList.add('admin-visible');
+  }
+}
+
 // Initial load: fetch meetings and select the newest one
 window.addEventListener('DOMContentLoaded', () => {
+  initAdminVisibility();
   initTimeline();
 });
 
@@ -223,33 +233,70 @@ function renderTrends(stats) {
   if (!container) return;
 
   const byCategory = stats.by_category || [];
-  const byRegion = stats.by_region || [];
   const byStatus = stats.by_status || [];
 
-  const renderList = (items, labelKey, valueKey) => {
+  const totalDecisions = (byStatus || []).reduce(
+    (sum, item) => sum + (item.decisions || 0),
+    0,
+  );
+
+  const renderBarList = (items, labelKey) => {
     if (!items.length) {
-      return '<p style="font-size:0.85rem;color:#64748b;">No data yet. Try preloading some meetings.</p>';
+      return '<p style="font-size:0.85rem;color:#64748b;">No data yet for this meeting.</p>';
     }
+    const maxVal = items.reduce(
+      (max, item) => Math.max(max, item.decisions || 0),
+      0,
+    ) || 1;
+
     return `<ul class="trend-list">${items
-      .map(
-        (item) =>
-          `<li><span>${escapeHtml(item[labelKey] || '')}</span><span>${item[valueKey] ?? 0}</span></li>`
-      )
+      .map((item) => {
+        const label = item[labelKey] || '';
+        const value = item.decisions || 0;
+        const pct = Math.round((value / maxVal) * 100);
+        return `
+          <li>
+            <div class="trend-label-row">
+              <span class="trend-label">${escapeHtml(label)}</span>
+              <span class="trend-value">${value}</span>
+            </div>
+            <div class="trend-bar-wrapper">
+              <div class="trend-bar" style="--pct:${pct};"></div>
+            </div>
+          </li>
+        `;
+      })
       .join('')}</ul>`;
   };
 
+  const statusPills = (byStatus || []).length
+    ? byStatus
+        .map(
+          (s) =>
+            `<span class="trend-status-pill">${escapeHtml(
+              s.status || '',
+            )}: ${s.decisions ?? 0}</span>`,
+        )
+        .join('')
+    : '<span class="trend-status-pill trend-status-pill-empty">No status breakdown yet</span>';
+
   container.innerHTML = `
-    <div class="trend-group">
-      <h3>Decisions by category</h3>
-      ${renderList(byCategory, 'category', 'decisions')}
+    <div class="trend-summary">
+      <div class="trend-summary-main">
+        <div class="trend-summary-number">${totalDecisions}</div>
+        <div class="trend-summary-label">Decisions in this meeting</div>
+      </div>
+      <div class="trend-summary-statuses">
+        ${statusPills}
+      </div>
     </div>
     <div class="trend-group">
-      <h3>Decisions by region</h3>
-      ${renderList(byRegion, 'region', 'decisions')}
+      <h3>By category</h3>
+      ${renderBarList(byCategory, 'category')}
     </div>
     <div class="trend-group">
-      <h3>Decisions by status</h3>
-      ${renderList(byStatus, 'status', 'decisions')}
+      <h3>By status</h3>
+      ${renderBarList(byStatus, 'status')}
     </div>
   `;
 }
@@ -507,7 +554,7 @@ function displayResults(data) {
   const { meeting_code, title, date, source_url, motions } = data;
 
   // Update header
-  document.getElementById('cityName').textContent = 'Toronto City Council';
+  document.getElementById('cityName').textContent = 'Council Digest';
 
   const displayTitle = getDisplayTitle(title || '');
   const meetingInfo =
@@ -609,14 +656,21 @@ function renderFilteredMotions() {
     });
   }
 
-  // Sort
+  // Sort by outcome (what happened to the motion)
   if (activeSort === 'category') {
     filtered.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
-  } else if (activeSort === 'status') {
-    const order = { PASSED: 0, AMENDED: 1, DEFERRED: 2, FAILED: 3 };
-    filtered.sort((a, b) => (order[a.status] ?? 4) - (order[b.status] ?? 4));
-  } else if (activeSort === 'title') {
-    filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+  } else if (activeSort === 'status_passed') {
+    const order = { PASSED: 0, AMENDED: 1, RECEIVED: 2, DEFERRED: 3, FAILED: 4 };
+    filtered.sort((a, b) => (order[a.status] ?? 5) - (order[b.status] ?? 5));
+  } else if (activeSort === 'status_deferred') {
+    const order = { DEFERRED: 0, RECEIVED: 1, PASSED: 2, AMENDED: 3, FAILED: 4 };
+    filtered.sort((a, b) => (order[a.status] ?? 5) - (order[b.status] ?? 5));
+  } else if (activeSort === 'status_amended') {
+    const order = { AMENDED: 0, PASSED: 1, RECEIVED: 2, DEFERRED: 3, FAILED: 4 };
+    filtered.sort((a, b) => (order[a.status] ?? 5) - (order[b.status] ?? 5));
+  } else if (activeSort === 'status_failed') {
+    const order = { FAILED: 0, DEFERRED: 1, RECEIVED: 2, PASSED: 3, AMENDED: 4 };
+    filtered.sort((a, b) => (order[a.status] ?? 5) - (order[b.status] ?? 5));
   }
 
   // Update count

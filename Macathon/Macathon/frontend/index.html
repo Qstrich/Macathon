@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Toronto City Council Tracker</title>
+  <title>Council Digest</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
   <header>
     <div class="container">
       <div class="logo">
-        <h1>Toronto City Council Tracker</h1>
+        <h1>Council Digest</h1>
         <p>Recent council decisions, explained in plain language</p>
       </div>
     </div>
@@ -24,9 +24,9 @@
       <aside class="timeline-column">
         <div class="timeline-header">
           <h2>Meetings</h2>
-          <p class="timeline-subtitle">Recent Toronto City Council meetings</p>
+          <p class="timeline-subtitle">Recent council meetings</p>
         </div>
-        <div id="timelineActions" class="timeline-actions">
+        <div id="timelineActions" class="timeline-actions admin-only">
           <button type="button" id="refreshFromCouncilBtn" class="action-btn" title="Re-fetch the latest meetings from the council site (2+ min)">Refresh from council</button>
           <button type="button" id="preloadAllBtn" class="action-btn" title="Pre-cache all meetings so none show —">Preload all meetings</button>
         </div>
@@ -88,9 +88,11 @@
               <label class="filter-label">Sort by</label>
               <select id="sortSelect" class="sort-select">
                 <option value="default">Default order</option>
-                <option value="category">Category</option>
-                <option value="status">Status</option>
-                <option value="title">Title (A-Z)</option>
+                <option value="status_passed">Passed first</option>
+                <option value="status_deferred">Deferred first</option>
+                <option value="status_amended">Amended first</option>
+                <option value="status_failed">Failed first</option>
+                <option value="category">By category</option>
               </select>
             </div>
             <div class="search-group">
@@ -155,6 +157,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

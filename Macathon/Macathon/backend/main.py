@@ -38,7 +38,7 @@ MEETINGS_CACHE_PATH = CACHE_DIR / "meetings_index.json"
 SCRAPED_INDEX_PATH = CACHE_DIR / "scraped_meetings.json"
 REPORTS_PATH = DATA_DIR / "reports.json"
 
-app = FastAPI(title="Toronto City Council Tracker API")
+app = FastAPI(title="Council Digest API")
 
 
 def _load_env_and_validate_api_key() -> None:
@@ -248,7 +248,7 @@ async def startup_event() -> None:
 
 @app.get("/api/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
-  return HealthResponse(status="ok", message="Toronto Council Tracker API is running")
+  return HealthResponse(status="ok", message="Council Digest API is running")
 
 
 @app.get("/api/debug/meeting-codes")

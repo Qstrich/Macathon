@@ -1,4 +1,4 @@
-# Core runtime for Toronto tracker backend
+# Core runtime for Council Digest backend
 python-dotenv
 pydantic
 fastapi

@@ -220,6 +220,14 @@ header {
   margin-top: 10px;
 }
 
+/* Admin-only block: hidden by default; show when URL has ?admin=1 */
+.timeline-actions.admin-only {
+  display: none;
+}
+.timeline-actions.admin-only.admin-visible {
+  display: flex;
+}
+
 .action-btn {
   padding: 6px 12px;
   font-size: 0.85rem;
@@ -575,6 +583,53 @@ header {
   margin-top: 8px;
 }
 
+.trend-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.trend-summary-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trend-summary-number {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.trend-summary-label {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.trend-summary-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trend-status-pill {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.trend-status-pill-empty {
+  opacity: 0.7;
+}
+
 .trend-group {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -596,9 +651,38 @@ header {
 }
 
 .trend-list li {
+  padding: 4px 0;
+}
+
+.trend-label-row {
   display: flex;
   justify-content: space-between;
-  padding: 2px 0;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.trend-label {
+  font-weight: 500;
+}
+
+.trend-value {
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.trend-bar-wrapper {
+  background: #f1f5f9;
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.trend-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: #0f3460;
+  width: calc(var(--pct, 0) * 1%);
 }
 
 /* Motions count bar */

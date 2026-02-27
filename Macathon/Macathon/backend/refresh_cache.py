@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Offline cache builder for the Toronto Council Tracker.
+Offline cache builder for Council Digest.
 
 Usage (from project root, with venv activated):
 

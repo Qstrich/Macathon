@@ -1,6 +1,6 @@
-# Local setup – Toronto City Council Tracker
+# Local setup – Council Digest
 
-Use this guide to run the **Toronto City Council Tracker** (timeline + meeting details) on your machine.
+Use this guide to run **Council Digest** (timeline + meeting details) on your machine.
 
 ---
 
@@ -136,15 +136,42 @@ before starting `uvicorn`. With scraper output already on disk, meeting details 
 
 **How we get the most recent:** The app gets council content from the City of Toronto council site. The Node scraper visits the council "Recent meetings" page, collects whatever meetings are currently listed there, and scrapes each meeting’s Decisions and Minutes. To update the app’s list with the latest meetings, run the scraper again (e.g. `node scrape-content.js` in `scraper/`) or use **Refresh from council** in the app when enabled.
 
-**Refresh from council:** In the timeline column, the **Refresh from council** button re-runs the Playwright scraper to fetch the latest meetings from the council site. This can take 2+ minutes and requires `ALLOW_LIVE_EXTRACTION=true` (or the backend returns 403). After it finishes, the meeting list is updated with whatever is currently on the council Recent table.
+**Admin UI (hidden by default):** The **Refresh from council** and **Preload all meetings** buttons are hidden from normal and presentation users. To show them (e.g. for development), open the app with `?admin=1` in the URL (e.g. `http://localhost:5500/?admin=1`). Do **not** use `?admin=1` when presenting or demoing so the admin controls stay hidden.
 
-**Preload all meetings:** The **Preload all meetings** button calls the backend to build and cache detail for every meeting in the current list that does not yet have cached detail. After it finishes, no meeting shows "—" in the list; all show real decision counts and topics. This can take several minutes if many meetings are uncached.
+**Refresh from council:** When admin is visible, **Refresh from council** re-runs the Playwright scraper to fetch the latest meetings from the council site. This can take 2+ minutes and requires `ALLOW_LIVE_EXTRACTION=true` (or the backend returns 403). After it finishes, the meeting list is updated with whatever is currently on the council Recent table.
+
+**Preload all meetings:** When admin is visible, **Preload all meetings** calls the backend to build and cache detail for every meeting in the current list that does not yet have cached detail. After it finishes, no meeting shows "—" in the list; all show real decision counts and topics. This can take several minutes if many meetings are uncached.
 
 **Content report:** Users can flag incorrect or inappropriate content from the motion detail modal via **Report this content**. Reports are stored in `data/reports.json` (with timestamp) for later review; the app does not display or act on them.
 
+**Production security:** The endpoints `POST /api/refresh` and `POST /api/prewarm` are unauthenticated. Hiding the buttons does not prevent someone from calling these URLs. For production, protect these endpoints (e.g. secret header or query param checked by the backend) or disable them and run refresh/prewarm via scheduled jobs or scripts.
+
 ---
 
-## 7. Quick checklist
+## 7. Presentation / Demo
+
+To run the app for a demo or presentation:
+
+1. **Start the backend** (from project root, with venv activated):  
+   `uvicorn backend.main:app --reload --port 8000`  
+   Ensure `.env` contains `GOOGLE_API_KEY`.
+
+2. **Serve the frontend** (e.g. from `frontend`):  
+   `python -m http.server 5500`  
+   then open **http://localhost:5500** in the browser.  
+   Do **not** add `?admin=1` so the admin buttons stay hidden.
+
+3. **Optional:** Prewarm the meeting list so the first load looks good:  
+   `python -m backend.refresh_cache`  
+   (run before the demo so meetings and decisions are cached).
+
+4. **Deployed backend:** If the frontend is loaded from a different origin than the API, set the API base URL by defining `window.APP_CONFIG` before the app script. For example, in `frontend/index.html` add before `<script src="app.js">`:  
+   `<script>window.APP_CONFIG = { apiUrl: 'https://your-api.example.com' };</script>`  
+   For local dev, no config is needed; the app defaults to `http://localhost:8000`.
+
+---
+
+## 8. Quick checklist
 
 | Step | Command / action |
 |------|-------------------|
@@ -159,7 +186,7 @@ before starting `uvicorn`. With scraper output already on disk, meeting details 
 
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 - **“No module named 'backend'”**  
   Run `uvicorn` from the **project root** (`Macathon\Macathon`), not from `backend` or `frontend`.
@@ -181,4 +208,4 @@ before starting `uvicorn`. With scraper output already on disk, meeting details 
 
 ---
 
-The **Toronto City Council Tracker** (timeline UI you have open) uses the **FastAPI backend on port 8000** and the **Node Playwright scraper** in `scraper/`, as described in this guide.
+**Council Digest** (timeline UI you have open) uses the **FastAPI backend on port 8000** and the **Node Playwright scraper** in `scraper/`, as described in this guide.

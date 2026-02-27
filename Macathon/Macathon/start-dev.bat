@@ -1,8 +1,8 @@
 @echo off
 cd /d "%~dp0"
-echo Starting Toronto Council Tracker...
+echo Starting Council Digest...
 echo.
-start "Toronto API" cmd /k "venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8000"
+start "Council Digest API" cmd /k "venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8000"
 timeout /t 2 /nobreak >nul
 start "Frontend" cmd /k "venv\Scripts\python.exe -m http.server 5173 --directory frontend"
 timeout /t 2 /nobreak >nul

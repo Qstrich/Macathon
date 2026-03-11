@@ -45,13 +45,6 @@ class PrewarmResponse(BaseModel):
   prewarmed: int
 
 
-class ContentReportRequest(BaseModel):
-  meeting_code: str
-  motion_id: Optional[int] = None
-  reason: str  # "incorrect_information" | "inappropriate" | "other"
-  comment: Optional[str] = None
-
-
 class CategoryStats(BaseModel):
   category: str
   decisions: int
@@ -78,14 +71,4 @@ class StatsResponse(BaseModel):
   by_region: List[RegionStats]
   by_status: List[StatusStats]
   by_meeting: List[MeetingStats]
-
-
-class MotionReportSummary(BaseModel):
-  meeting_code: str
-  motion_id: int
-  incorrect_reports: int
-
-
-class ReportsSummaryResponse(BaseModel):
-  by_motion: List[MotionReportSummary]
 

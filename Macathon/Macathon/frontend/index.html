@@ -126,37 +126,12 @@
           <div class="modal-status" id="modalStatus"></div>
           <div class="modal-tags" id="modalTags"></div>
           <div class="modal-full-text" id="modalFullText"></div>
-          <button type="button" id="reportMotionBtn" class="report-btn">Report this content</button>
         </div>
-      </div>
-    </div>
-
-    <!-- Report modal -->
-    <div id="reportModal" class="modal hidden">
-      <div class="modal-content report-modal-content">
-        <button type="button" class="modal-close" id="reportModalClose">×</button>
-        <h3 class="report-modal-title">Report content</h3>
-        <p class="report-modal-desc">Flag incorrect or inappropriate content for review.</p>
-        <form id="reportForm" class="report-form">
-          <label class="report-label">Reason</label>
-          <select id="reportReason" class="report-select" required>
-            <option value="">Select a reason</option>
-            <option value="incorrect_information">Incorrect information</option>
-            <option value="inappropriate">Inappropriate content</option>
-            <option value="other">Other</option>
-          </select>
-          <label class="report-label">Comment (optional)</label>
-          <textarea id="reportComment" class="report-textarea" rows="3" placeholder="Add details if helpful"></textarea>
-          <div class="report-actions">
-            <button type="button" class="action-btn" id="reportCancelBtn">Cancel</button>
-            <button type="submit" class="action-btn report-submit">Submit report</button>
-          </div>
-        </form>
-        <p id="reportConfirmation" class="report-confirmation hidden">Report submitted. Thank you.</p>
       </div>
     </div>
   </div>
 
+  <script>window.APP_CONFIG = { apiUrl: 'https://macathon-api-151434748461.us-central1.run.app' };</script>
   <script src="app.js?v=2"></script>
 </body>
 </html>

@@ -4,3 +4,4 @@ pydantic
 fastapi
 uvicorn[standard]
 google-genai
+supabase

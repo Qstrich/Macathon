@@ -13,22 +13,26 @@ from dotenv import load_dotenv
 
 from .models import (
   CategoryStats,
-  ContentReportRequest,
   HealthResponse,
   MeetingDetail,
   MeetingOverview,
   MeetingStats,
   Motion,
-  MotionReportSummary,
   PrewarmResponse,
   RefreshResponse,
   RegionStats,
-  ReportsSummaryResponse,
   StatsResponse,
   StatusStats,
 )
 from .scraper_bridge import ScrapedMeetingFiles, load_scraped_from_disk, run_node_scraper
 from .extractor import build_meeting_detail_from_scraped
+from .supabase_client import (
+  get_meeting_detail as sb_get_meeting_detail,
+  get_meetings_index as sb_get_meetings_index,
+  is_configured as supabase_is_configured,
+  save_meeting_detail as sb_save_meeting_detail,
+  save_meetings_index as sb_save_meetings_index,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,7 +40,6 @@ DATA_DIR = BASE_DIR / "data"
 CACHE_DIR = DATA_DIR / "cache"
 MEETINGS_CACHE_PATH = CACHE_DIR / "meetings_index.json"
 SCRAPED_INDEX_PATH = CACHE_DIR / "scraped_meetings.json"
-REPORTS_PATH = DATA_DIR / "reports.json"
 
 app = FastAPI(title="Council Digest API")
 
@@ -53,6 +56,7 @@ def _load_env_and_validate_api_key() -> None:
 
 
 ALLOW_LIVE_EXTRACTION = os.getenv("ALLOW_LIVE_EXTRACTION", "false").lower() in {"1", "true", "yes"}
+USE_SUPABASE_CACHE = supabase_is_configured()
 
 app.add_middleware(
     CORSMiddleware,
@@ -254,6 +258,15 @@ async def health() -> HealthResponse:
 @app.get("/api/debug/meeting-codes")
 async def debug_meeting_codes() -> dict:
   """Return meeting codes and scraped count for debugging 'Meeting not found' or fetch errors."""
+  if USE_SUPABASE_CACHE:
+    try:
+      cached = sb_get_meetings_index()
+      if cached:
+        codes = [m.meeting_code for m in cached]
+        return {"source": "supabase", "count": len(codes), "meeting_codes": codes}
+    except Exception:
+      logger.exception("Failed to load meeting codes from Supabase; falling back to JSON cache.")
+
   cached = _load_meetings_cache()
   if cached:
     codes = [m.meeting_code for m in cached]
@@ -339,24 +352,43 @@ def _with_detail_cached(overviews: List[MeetingOverview]) -> List[MeetingOvervie
 
 @app.get("/api/meetings", response_model=List[MeetingOverview])
 async def list_meetings() -> List[MeetingOverview]:
-  # 1. Prefer cache so reloads never re-run the scraper
+  # 1. Prefer Supabase cache when configured
+  if USE_SUPABASE_CACHE:
+    try:
+      cached_sb = sb_get_meetings_index()
+      if cached_sb:
+        return list(reversed(cached_sb))
+    except Exception:
+      logger.exception("Failed to load meetings index from Supabase; falling back to JSON cache and scraper.")
+
+  # 2. Prefer local JSON cache so reloads never re-run the scraper
   cached = _load_meetings_cache()
   if cached:
     return list(reversed(_with_detail_cached(cached)))
 
-  # 2. Use existing scraper output if present (no browser run)
+  # 3. Use existing scraper output if present (no browser run)
   scraped = load_scraped_from_disk()
   if scraped:
     overviews = _build_meeting_overviews(scraped)
     _save_meetings_cache(overviews)
+    if USE_SUPABASE_CACHE:
+      try:
+        sb_save_meetings_index(overviews)
+      except Exception:
+        logger.exception("Failed to save meetings index to Supabase.")
     _save_scraped_index(scraped)
     return list(reversed(_with_detail_cached(overviews)))
 
-  # 3. Optionally allow live extraction when explicitly enabled (development/demo)
+  # 4. Optionally allow live extraction when explicitly enabled (development/demo)
   if ALLOW_LIVE_EXTRACTION:
     scraped = run_node_scraper()
     overviews = _build_meeting_overviews(scraped)
     _save_meetings_cache(overviews)
+    if USE_SUPABASE_CACHE:
+      try:
+        sb_save_meetings_index(overviews)
+      except Exception:
+        logger.exception("Failed to save meetings index to Supabase after live extraction.")
     _save_scraped_index(scraped)
     return list(reversed(_with_detail_cached(overviews)))
 
@@ -377,11 +409,21 @@ def _find_scraped_for_code(meeting_code: str, scraped: List[ScrapedMeetingFiles]
 @app.get("/api/meetings/{meeting_code}", response_model=MeetingDetail)
 async def get_meeting(meeting_code: str) -> MeetingDetail:
   try:
+    # 1. Prefer Supabase cache when configured
+    if USE_SUPABASE_CACHE:
+      try:
+        cached_sb = sb_get_meeting_detail(meeting_code)
+        if cached_sb:
+          return cached_sb
+      except Exception:
+        logger.exception("Failed to load meeting detail for %s from Supabase; falling back to JSON cache.", meeting_code)
+
+    # 2. Fallback to local JSON cache
     cached_detail = _load_meeting_detail(meeting_code)
     if cached_detail:
       return cached_detail
 
-    # Lazy on-demand: load scraped list (cache, disk, or run scraper if allowed)
+    # 3. Lazy on-demand: load scraped list (cache, disk, or run scraper if allowed)
     scraped = _load_scraped_index()
     if not scraped:
       scraped = load_scraped_from_disk()
@@ -431,10 +473,20 @@ async def get_meeting(meeting_code: str) -> MeetingDetail:
       if not seen:
         updated.append(overview)
       _save_meetings_cache(updated)
+      if USE_SUPABASE_CACHE:
+        try:
+          sb_save_meetings_index(updated)
+        except Exception:
+          logger.exception("Failed to mirror updated meetings index to Supabase for %s.", meeting_code)
     except Exception:
       pass
 
     _save_meeting_detail(detail)
+    if USE_SUPABASE_CACHE:
+      try:
+        sb_save_meeting_detail(detail)
+      except Exception:
+        logger.exception("Failed to save meeting detail for %s to Supabase.", meeting_code)
     return detail
   except HTTPException:
     raise
@@ -454,6 +506,11 @@ async def refresh_from_council() -> RefreshResponse:
   scraped = run_node_scraper()
   overviews = _build_meeting_overviews(scraped)
   _save_meetings_cache(overviews)
+  if USE_SUPABASE_CACHE:
+    try:
+      sb_save_meetings_index(overviews)
+    except Exception:
+      logger.exception("Failed to save meetings index to Supabase during refresh_from_council.")
   _save_scraped_index(scraped)
   return RefreshResponse(meetings_count=len(overviews))
 
@@ -490,74 +547,22 @@ async def prewarm_all() -> PrewarmResponse:
     try:
       detail = build_meeting_detail_from_scraped(meeting_code, overview, raw)
       _save_meeting_detail(detail)
+      if USE_SUPABASE_CACHE:
+        try:
+          sb_save_meeting_detail(detail)
+        except Exception:
+          logger.exception("Failed to save meeting detail for %s to Supabase during prewarm.", meeting_code)
       prewarmed += 1
       existing = _load_meetings_cache() or overviews
       updated = [m for m in existing if m.meeting_code != meeting_code]
       updated.append(overview)
       _save_meetings_cache(updated)
+      if USE_SUPABASE_CACHE:
+        try:
+          sb_save_meetings_index(updated)
+        except Exception:
+          logger.exception("Failed to save meetings index to Supabase during prewarm for %s.", meeting_code)
     except Exception as e:
       logger.warning("prewarm failed for %s: %s", meeting_code, e)
   return PrewarmResponse(prewarmed=prewarmed)
-
-
-def _append_report(payload: dict) -> None:
-  _ensure_dirs()
-  reports: List[dict] = []
-  if REPORTS_PATH.exists():
-    try:
-      reports = json.loads(REPORTS_PATH.read_text(encoding="utf-8"))
-      if not isinstance(reports, list):
-        reports = []
-    except Exception:
-      reports = []
-  entry = {**payload, "timestamp": datetime.utcnow().isoformat() + "Z"}
-  reports.append(entry)
-  REPORTS_PATH.write_text(json.dumps(reports, indent=2), encoding="utf-8")
-
-
-@app.post("/api/reports", status_code=201)
-async def submit_report(body: ContentReportRequest) -> dict:
-  """Record a content report (incorrect or inappropriate content) for later review."""
-  if body.reason not in ("incorrect_information", "inappropriate", "other"):
-    raise HTTPException(status_code=400, detail="reason must be one of: incorrect_information, inappropriate, other")
-  payload = body.model_dump()
-  _append_report(payload)
-  return {"status": "submitted"}
-
-
-@app.get("/api/reports/summary", response_model=ReportsSummaryResponse)
-async def reports_summary(meeting_code: Optional[str] = None) -> ReportsSummaryResponse:
-  """Summarize incorrect-information reports per motion."""
-  if not REPORTS_PATH.exists():
-    return ReportsSummaryResponse(by_motion=[])
-
-  try:
-    raw = json.loads(REPORTS_PATH.read_text(encoding="utf-8"))
-  except Exception:
-    return ReportsSummaryResponse(by_motion=[])
-
-  counts: dict[tuple[str, int], int] = {}
-  if isinstance(raw, list):
-    for entry in raw:
-      try:
-        reason = entry.get("reason")
-        mc = entry.get("meeting_code")
-        mid = entry.get("motion_id")
-      except AttributeError:
-        continue
-      if reason != "incorrect_information":
-        continue
-      if not mc or mid is None:
-        continue
-      if meeting_code and mc != meeting_code:
-        continue
-      key = (mc, int(mid))
-      counts[key] = counts.get(key, 0) + 1
-
-  by_motion = [
-    MotionReportSummary(meeting_code=mc, motion_id=mid, incorrect_reports=count)
-    for (mc, mid), count in counts.items()
-  ]
-  return ReportsSummaryResponse(by_motion=by_motion)
-
 

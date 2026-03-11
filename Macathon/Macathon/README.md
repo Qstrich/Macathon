@@ -13,7 +13,7 @@
 - **Full-text search** — Search within a meeting by keywords across titles, summaries, and tags
 - **Trends view** — Per-meeting analytics: breakdown by category and status
 - **Link to source** — View the original council document for verification
-- **Content reports** — Users can flag incorrect or inappropriate content; reports are stored for review, and a badge shows the report count on each decision
+
 
 ---
 
@@ -32,10 +32,10 @@
 └─────────────────┘     └────────┬─────────┘     └────────┬────────┘
                                                            │
                                                            ▼
-                                                ┌─────────────────┐
-                                                │  data/cache/    │
-                                                │  meetings/*.json│
-                                                └─────────────────┘
+                                                ┌──────────────────────────┐
+                                                │  Supabase (Postgres)     │
+                                                │  meetings, meeting_details│
+                                                └──────────────────────────┘
 ```
 
 - **Scraper** — Visits [secure.toronto.ca](https://secure.toronto.ca/council/#/highlights), collects meeting links from the Recent meetings table, fetches Decisions and Minutes text
@@ -46,7 +46,7 @@
 
 ## Tech stack
 
-- **Backend:** Python 3.11+, FastAPI, Google Gemini (genai)
+- **Backend:** Python 3.11+, FastAPI, Google Gemini (genai), Supabase (Postgres)
 - **Frontend:** Vanilla HTML, CSS, JavaScript (no framework)
 - **Scraper:** Node.js, Playwright (Chromium)
 
@@ -87,7 +87,7 @@ Macathon/
 │   ├── output/             # .txt files + index.json
 │   └── package.json
 ├── data/
-│   └── cache/              # meetings_index.json, meetings/*.json, reports.json
+│   └── cache/              # (legacy) meetings_index.json, meetings/*.json
 ├── resync_meetings_index.py
 ├── prewarm_single.py       # Cache one meeting at a time
 ├── prewarm_all.py          # Bulk prewarm
@@ -103,8 +103,6 @@ Macathon/
 | `GET /api/meetings` | List meetings with motion counts and topics |
 | `GET /api/meetings/{code}` | Meeting detail with motions (lazy Gemini + cache) |
 | `GET /api/stats` | Global stats across cached meetings |
-| `GET /api/reports/summary` | Report counts by motion (for badges) |
-| `POST /api/reports` | Submit content report |
 | `POST /api/refresh` | Re-run scraper (requires `ALLOW_LIVE_EXTRACTION`) |
 | `POST /api/prewarm` | Pre-cache all meeting details |
 
@@ -112,9 +110,26 @@ Macathon/
 
 ## Deployment
 
-- **Config:** Set `window.APP_CONFIG = { apiUrl: 'https://your-api.example.com' }` in `index.html` before the app script when frontend and backend are on different origins
-- **Security:** Protect or disable `POST /api/refresh` and `POST /api/prewarm` in production
-- **Presentation mode:** Admin buttons (Refresh, Preload) are hidden by default; use `?admin=1` only for development
+- **Config:** Set `window.APP_CONFIG = { apiUrl: 'https://your-api.example.com' }` in `index.html` before the app script when frontend and backend are on different origins.
+- **Supabase:** In hosted environments, set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` so the backend stores meeting caches in Supabase tables (`meetings`, `meeting_details`) instead of relying solely on local JSON files.
+- **Security:** Protect or disable `POST /api/refresh` and `POST /api/prewarm` in production.
+- **Presentation mode:** Admin buttons (Refresh, Preload) are hidden by default; use `?admin=1` only for development.
+
+### Docker + Cloud Run
+
+- **Build image:**
+  - From the repo root (this folder), run:
+    - `gcloud builds submit --tag REGION-docker.pkg.dev/PROJECT_ID/macathon/macathon-api .`
+- **Deploy to Cloud Run:**
+  - `gcloud run deploy macathon-api --image REGION-docker.pkg.dev/PROJECT_ID/macathon/macathon-api --platform managed --region REGION --allow-unauthenticated --port 8000`
+  - Configure environment variables on the service:
+    - `GOOGLE_API_KEY`
+    - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+    - `ALLOW_LIVE_EXTRACTION` (only if you want Cloud Run to be allowed to run the scraper)
+- **Scheduler jobs (optional):**
+  - Use Cloud Scheduler to call:
+    - `POST {CLOUD_RUN_URL}/api/refresh` daily for new meetings.
+    - `POST {CLOUD_RUN_URL}/api/prewarm` nightly to precompute all meeting details.
 
 ---
 

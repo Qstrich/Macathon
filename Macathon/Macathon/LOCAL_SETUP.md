@@ -72,6 +72,20 @@ You must be in `Macathon\Macathon` again after the `cd ..`.
 
 The scraper runs **headless** by default (no browser window). To see the browser for debugging, set `HEADLESS=false` in the environment before starting the API.
 
+### 3.4 Supabase (optional, hosted cache)
+
+If you want the meeting cache to live in Supabase (recommended for Cloud Run or other hosted deployments), create the following environment variables in `.env`:
+
+```text
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+```
+
+You should also create two tables in Supabase:
+
+- `meetings` — columns mirroring `MeetingOverview` (meeting_code PK, title, date, topics/text[], motion_count, region, detail_cached?, updated_at).
+- `meeting_details` — `meeting_code` (PK/FK) plus a `detail` JSONB column containing the full `MeetingDetail` payload and an optional `generated_at` timestamp.
+
 ---
 
 ## 4. Running the app
@@ -142,9 +156,9 @@ before starting `uvicorn`. With scraper output already on disk, meeting details 
 
 **Preload all meetings:** When admin is visible, **Preload all meetings** calls the backend to build and cache detail for every meeting in the current list that does not yet have cached detail. After it finishes, no meeting shows "—" in the list; all show real decision counts and topics. This can take several minutes if many meetings are uncached.
 
-**Content report:** Users can flag incorrect or inappropriate content from the motion detail modal via **Report this content**. Reports are stored in `data/reports.json` (with timestamp) for later review; the app does not display or act on them.
-
 **Production security:** The endpoints `POST /api/refresh` and `POST /api/prewarm` are unauthenticated. Hiding the buttons does not prevent someone from calling these URLs. For production, protect these endpoints (e.g. secret header or query param checked by the backend) or disable them and run refresh/prewarm via scheduled jobs or scripts.
+
+When Supabase is configured (`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set), the backend mirrors meeting index and detail data into the `meetings` and `meeting_details` tables while still writing local JSON cache files for CLI tools.
 
 ---
 
@@ -168,6 +182,8 @@ To run the app for a demo or presentation:
 4. **Deployed backend:** If the frontend is loaded from a different origin than the API, set the API base URL by defining `window.APP_CONFIG` before the app script. For example, in `frontend/index.html` add before `<script src="app.js">`:  
    `<script>window.APP_CONFIG = { apiUrl: 'https://your-api.example.com' };</script>`  
    For local dev, no config is needed; the app defaults to `http://localhost:8000`.
+
+   For Cloud Run, build and deploy the Docker image in this repo, then point `window.APP_CONFIG.apiUrl` at the Cloud Run service URL.
 
 ---
 

@@ -7,12 +7,10 @@ let meetings = [];
 let activeMeetingCode = null;
 let activeRegion = 'all';
 let loadingLongTimeout = null;
-let currentModalMotion = null;
 let activeSearchQuery = '';
 let searchDebounceTimeout = null;
 let activeView = 'decisions';
 let statsCache = null;
-let reportCountsByMotionId = {};
 
 function getDisplayTitle(title) {
   if (!title) return '';
@@ -486,33 +484,12 @@ async function loadMeeting(meetingCode) {
       };
       renderTimeline(meetings);
     }
-    await loadReportSummary(data.meeting_code);
   } catch (error) {
     console.error('Error loading meeting:', error);
     const message = error.message || 'Could not load meeting';
     showError(message);
   } finally {
     hideLoading();
-  }
-}
-
-async function loadReportSummary(meetingCode) {
-  reportCountsByMotionId = {};
-  try {
-    const response = await fetch(`${API_URL}/api/reports/summary?meeting_code=${encodeURIComponent(meetingCode)}`);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || `Reports summary failed (${response.status})`);
-    }
-    const byMotion = data.by_motion || [];
-    byMotion.forEach((item) => {
-      if (item.motion_id != null) {
-        reportCountsByMotionId[item.motion_id] = item.incorrect_reports || 0;
-      }
-    });
-    renderFilteredMotions();
-  } catch (error) {
-    console.error('Failed to load reports summary:', error);
   }
 }
 
@@ -705,16 +682,11 @@ function createMotionCard(motion, index) {
 
   const statusClass = `status-${motion.status.toLowerCase()}`;
   const categoryClass = `category-${motion.category.toLowerCase()}`;
-   const reportCount = reportCountsByMotionId[motion.id] || 0;
-   const reportBadge = reportCount > 0
-     ? `<span class="card-report-badge">Reported ×${reportCount}</span>`
-     : '';
 
   card.innerHTML = `
     <div class="card-header">
       <span class="card-category ${categoryClass}">${motion.category}</span>
       <span class="card-status ${statusClass}">${motion.status}</span>
-      ${reportBadge}
     </div>
     <h3 class="card-title">${escapeHtml(motion.title)}</h3>
     <p class="card-summary">${escapeHtml(motion.summary)}</p>
@@ -776,65 +748,6 @@ function closeModal() {
 document.getElementById('modal').addEventListener('click', (e) => {
   if (e.target.id === 'modal') {
     closeModal();
-  }
-});
-
-// Report modal
-function openReportModal() {
-  if (!activeMeetingCode || !currentModalMotion) return;
-  document.getElementById('reportForm').classList.remove('hidden');
-  document.getElementById('reportConfirmation').classList.add('hidden');
-  document.getElementById('reportReason').value = '';
-  document.getElementById('reportComment').value = '';
-  document.getElementById('reportModal').classList.remove('hidden');
-}
-
-function closeReportModal() {
-  document.getElementById('reportModal').classList.add('hidden');
-}
-
-document.getElementById('reportMotionBtn').addEventListener('click', (e) => {
-  e.stopPropagation();
-  openReportModal();
-});
-
-document.getElementById('reportModalClose').addEventListener('click', closeReportModal);
-document.getElementById('reportCancelBtn').addEventListener('click', closeReportModal);
-
-document.getElementById('reportModal').addEventListener('click', (e) => {
-  if (e.target.id === 'reportModal') closeReportModal();
-});
-
-document.getElementById('reportForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const reason = document.getElementById('reportReason').value;
-  const comment = document.getElementById('reportComment').value.trim() || null;
-  if (!reason) return;
-  try {
-    const response = await fetch(`${API_URL}/api/reports`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        meeting_code: activeMeetingCode,
-        motion_id: currentModalMotion.id,
-        reason,
-        comment,
-      }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.detail || 'Report failed');
-    document.getElementById('reportForm').classList.add('hidden');
-    document.getElementById('reportConfirmation').classList.remove('hidden');
-    setTimeout(closeReportModal, 1500);
-    // Optimistically bump report count for this motion when reason is incorrect_information
-    if (reason === 'incorrect_information' && currentModalMotion?.id != null) {
-      const id = currentModalMotion.id;
-      reportCountsByMotionId[id] = (reportCountsByMotionId[id] || 0) + 1;
-      renderFilteredMotions();
-    }
-  } catch (err) {
-    console.error('Report submit failed:', err);
-    alert(err.message || 'Could not submit report');
   }
 });
 

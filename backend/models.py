@@ -8,7 +8,9 @@ class Motion(BaseModel):
   id: int
   title: str
   summary: str
-  status: str  # PASSED | FAILED | DEFERRED | AMENDED
+  # Normalized status from extractor:
+  # PASSED | FAILED | DEFERRED | AMENDED | RECEIVED
+  status: str
   category: str
   impact_tags: List[str]
   full_text: Optional[str] = None

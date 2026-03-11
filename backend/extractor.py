@@ -58,6 +58,55 @@ def _get_gemini_client() -> genai.Client:
     return _gemini_client
 
 
+def _normalize_status(raw: str | None) -> str:
+    """Map model-returned status strings into a small normalized set.
+
+    Normalized statuses:
+    - PASSED
+    - FAILED
+    - DEFERRED
+    - AMENDED
+    - RECEIVED
+
+    Source text from council/committee materials often uses labels like
+    "Adopted", "Carried", "Approved", or phrases such as "Adopted as amended".
+    We treat these as real decisions and map them to the closest normalized
+    status so downstream stats and UI stay consistent.
+    """
+    if raw is None:
+        return "PASSED"
+
+    text = str(raw).strip()
+    if not text:
+        return "PASSED"
+
+    upper = text.upper()
+
+    # Already normalized
+    if upper in {"PASSED", "FAILED", "DEFERRED", "AMENDED", "RECEIVED"}:
+        return upper
+
+    # Anything explicitly about "received" stays RECEIVED
+    if "RECEIVE" in upper or "RECEIVED" in upper:
+        return "RECEIVED"
+
+    # Variants that clearly indicate an amendment.
+    if "AMEND" in upper:
+        return "AMENDED"
+
+    # Common positive decision verbs seen in committee/board materials.
+    if any(keyword in upper for keyword in ["ADOPT", "CARRIED", "CARRIED", "APPROV", "AGREED", "ENDORSED"]):
+        return "PASSED"
+
+    # Items referred or deferred to another body.
+    if "DEFER" in upper or "REFERRED" in upper or "REFER" in upper:
+        return "DEFERRED"
+
+    # Catch-all: when in doubt, treat as PASSED so that substantive decisions
+    # are not silently dropped due to unfamiliar status wording.
+    return "PASSED"
+
+
 ITEM_START_RE = re.compile(
     # Examples: RD1.1 - ..., TE29.3 - ..., SC29.5 - ...
     r"^(?P<code>[A-Z]{1,4}\d+\.\d+)\s*-\s*(?P<title>.+)$"
@@ -103,17 +152,30 @@ def segment_decisions_text(text: str) -> List[ItemChunk]:
 
 
 MOTION_EXTRACTION_INSTRUCTIONS = """
-You are helping summarize ONE Toronto council or committee decision item.
+You are helping summarize ONE Toronto council, committee, or board decision item.
 
 Your job is to turn each item into a clear, resident‑friendly summary card.
 
 Very important behaviour:
 - **Almost always produce ONE motion object.** Only return [] for items that are
-  *purely procedural* like:
-  - adoption of minutes with no new decision
+  *clearly and purely procedural* like:
+  - adoption/confirmation of previous minutes with no new decision
   - calling the meeting to order / adjournment
   - going in / out of closed session
   - declaring conflicts of interest
+- Items from Council, Community Councils, the Executive Committee, the General
+  Government Committee, and other boards/committees should almost always be
+  treated as **substantive** if they involve a decision, direction, approval,
+  or receipt of a report.
+- When the decision text uses labels like "Adopted", "Adopted as amended",
+  "Carried", "Carried as amended", "Approved", or similar, you MUST treat this
+  as a real decision and pick the closest normalized status:
+  - Use "PASSED" for clearly adopted/carried/approved decisions.
+  - Use "AMENDED" when the decision is explicitly adopted or carried **as
+    amended**.
+  - Use "RECEIVED" when the item is clearly being received for information only.
+  - Use "DEFERRED" when the item is being deferred, referred, or sent to
+    another body/time.
 - Items with decision types like ACTION, INFORMATION, PRESENTATION, or with a
   clear recommendation (even if the Status is "Received") should still be
   treated as substantive and summarized.
@@ -261,7 +323,8 @@ def extract_motions_for_item(chunk: ItemChunk) -> List[Motion]:
         try:
             title = (item.get("title") or "").strip() or chunk.heading
             summary = (item.get("summary") or "").strip() or chunk.body[:500]
-            status = (item.get("status") or "PASSED").upper()
+            raw_status = item.get("status") or "PASSED"
+            status = _normalize_status(raw_status)
             category = (item.get("category") or "other").lower()
             impact_tags = item.get("impact_tags") or []
             if not isinstance(impact_tags, list):

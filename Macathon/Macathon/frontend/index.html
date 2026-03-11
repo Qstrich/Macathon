@@ -131,7 +131,12 @@
     </div>
   </div>
 
-  <script>window.APP_CONFIG = { apiUrl: 'https://macathon-api-151434748461.us-central1.run.app' };</script>
-  <script src="app.js?v=2"></script>
+  <!-- Supabase-only (no Cloud Run): set supabaseUrl + supabaseAnonKey. Else app uses apiUrl. -->
+  <script>
+    window.APP_CONFIG = window.APP_CONFIG || {};
+    // window.APP_CONFIG.supabaseUrl = 'https://YOUR_PROJECT.supabase.co';
+    // window.APP_CONFIG.supabaseAnonKey = 'YOUR_ANON_KEY';
+  </script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

@@ -110,12 +110,56 @@ Macathon/
 
 ## Deployment
 
-- **Config:** Set `window.APP_CONFIG = { apiUrl: 'https://your-api.example.com' }` in `index.html` before the app script when frontend and backend are on different origins.
-- **Supabase:** In hosted environments, set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` so the backend stores meeting caches in Supabase tables (`meetings`, `meeting_details`) instead of relying solely on local JSON files.
-- **Security:** Protect or disable `POST /api/refresh` and `POST /api/prewarm` in production.
-- **Presentation mode:** Admin buttons (Refresh, Preload) are hidden by default; use `?admin=1` only for development.
+### GitHub Pages + Supabase only (no Cloud Run)
 
-### Docker + Cloud Run
+You can run the app with **only GitHub Pages + Supabase**. The frontend reads from Supabase directly; no API server or Google Cloud is required.
+
+1. **Supabase:** Create tables and allow public read (Supabase → SQL Editor):
+
+```sql
+create table if not exists public.meetings (
+  meeting_code text primary key,
+  title text not null,
+  date text not null,
+  topics text[] not null default '{}',
+  motion_count integer not null default 0,
+  region text,
+  detail_cached boolean,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.meeting_details (
+  meeting_code text primary key references public.meetings(meeting_code) on delete cascade,
+  detail jsonb not null,
+  generated_at timestamptz not null default now()
+);
+
+alter table public.meetings enable row level security;
+alter table public.meeting_details enable row level security;
+create policy "Allow public read meetings" on public.meetings for select to anon using (true);
+create policy "Allow public read meeting_details" on public.meeting_details for select to anon using (true);
+```
+
+2. **Frontend config:** In `frontend/index.html`, set (or deploy with) your Supabase project URL and **anon** key (not the service role key):
+
+```html
+<script>
+  window.APP_CONFIG = {
+    supabaseUrl: 'https://YOUR_PROJECT.supabase.co',
+    supabaseAnonKey: 'YOUR_ANON_KEY'
+  };
+</script>
+```
+
+3. **Populate data:** Run the scraper + Gemini and write to Supabase via GitHub Actions (add repo secrets: `GOOGLE_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) and run the "Daily scrape + refresh Supabase cache" workflow, or run locally: `python -m backend.refresh_cache --max-meetings 3`.
+
+4. **Host:** Push the frontend to GitHub and enable Pages (e.g. from `Macathon/Macathon/frontend` or your chosen branch/folder). The site will load meetings and summarized motion cards from Supabase.
+
+- **Config (with API):** If you use a backend, set `window.APP_CONFIG = { apiUrl: 'https://your-api.example.com' }` instead of Supabase keys.
+- **Security:** Protect or disable `POST /api/refresh` and `POST /api/prewarm` in production when using an API.
+- **Presentation mode:** Admin buttons (Refresh, Preload) are hidden when using Supabase-only; they run via GitHub Actions.
+
+### Docker + Cloud Run (optional)
 
 - **Build image:**
   - From the repo root (this folder), run:

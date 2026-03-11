@@ -1,4 +1,18 @@
 const API_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.apiUrl) || 'http://localhost:8000';
+const SUPABASE_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.supabaseUrl) || '';
+const SUPABASE_ANON_KEY = (typeof window !== 'undefined' && window.APP_CONFIG?.supabaseAnonKey) || '';
+const USE_SUPABASE = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+function supabaseFetch(path, options = {}) {
+  const url = SUPABASE_URL.replace(/\/$/, '') + '/rest/v1' + path;
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  return fetch(url, { ...options, headers });
+}
 
 let currentMotions = [];
 let activeCategory = 'all';
@@ -18,12 +32,14 @@ function getDisplayTitle(title) {
   return m ? m[2] : title;
 }
 
-// Show admin actions only when URL has ?admin=1 (or &admin=1)
+// Show admin actions only when URL has ?admin=1 and we're using the API (not Supabase-only)
 function initAdminVisibility() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('admin') === '1') {
-    const el = document.getElementById('timelineActions');
-    if (el) el.classList.add('admin-visible');
+  const el = document.getElementById('timelineActions');
+  if (USE_SUPABASE) {
+    if (el) el.style.display = 'none'; // Refresh/Prewarm run via GitHub Actions when using Supabase
+  } else if (params.get('admin') === '1' && el) {
+    el.classList.add('admin-visible');
   }
 }
 
@@ -81,26 +97,29 @@ async function initTimeline() {
   hideResults();
 
   try {
-    const response = await fetch(`${API_URL}/api/meetings`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.detail || 'Failed to fetch meetings');
+    if (USE_SUPABASE) {
+      const response = await supabaseFetch('/meetings?select=*&order=date.desc');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to fetch meetings');
+      meetings = Array.isArray(data) ? data : [];
+    } else {
+      const response = await fetch(`${API_URL}/api/meetings`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Failed to fetch meetings');
+      meetings = data;
     }
 
-    meetings = data;
     renderRegionFilters(meetings);
     renderTimeline(meetings);
 
     if (meetings.length > 0) {
-      // Assume API returns newest first; select the first meeting
       selectTimelineItem(meetings[0].meeting_code);
       await loadMeeting(meetings[0].meeting_code);
     }
   } catch (error) {
     console.error('Error loading meetings:', error);
     const msg = error.message || 'Could not load meetings';
-    showError(msg + (msg.includes('fetch') ? ' Is the backend running at http://localhost:8000?' : ''));
+    showError(msg + (!USE_SUPABASE && msg.includes('fetch') ? ' Is the backend running at http://localhost:8000?' : ''));
   } finally {
     hideLoading();
   }
@@ -452,22 +471,24 @@ async function loadMeeting(meetingCode) {
   activeSort = 'default';
   document.getElementById('sortSelect').value = 'default';
 
-  const url = `${API_URL}/api/meetings/${encodeURIComponent(meetingCode)}`;
+  let data;
   try {
-    const response = await fetch(url);
-    let data;
-    try {
+    if (USE_SUPABASE) {
+      const enc = encodeURIComponent(meetingCode);
+      const response = await supabaseFetch(`/meeting_details?meeting_code=eq.${enc}&select=detail`);
+      const raw = await response.json();
+      if (!response.ok) throw new Error(raw.message || 'Failed to load meeting');
+      const row = Array.isArray(raw) ? raw[0] : raw;
+      if (!row || row.detail == null) throw new Error('Meeting details not found. Run the daily refresh (e.g. GitHub Actions) to populate summaries.');
+      data = row.detail;
+    } else {
+      const response = await fetch(`${API_URL}/api/meetings/${encodeURIComponent(meetingCode)}`);
       data = await response.json();
-    } catch (_) {
-      // Server returned non-JSON (e.g. HTML error page)
-      throw new Error(response.ok ? 'Invalid response from server' : `Server error (${response.status}). Is the backend running on port 8000?`);
+      if (!response.ok) {
+        const msg = Array.isArray(data.detail) ? data.detail.map((x) => x.msg || x).join(', ') : (data.detail || data.message || `Error ${response.status}`);
+        throw new Error(msg);
+      }
     }
-
-    if (!response.ok) {
-      const msg = Array.isArray(data.detail) ? data.detail.map((x) => x.msg || x).join(', ') : (data.detail || data.message || `Error ${response.status}`);
-      throw new Error(msg);
-    }
-
     currentMotions = data.motions || [];
     displayResults(data);
 

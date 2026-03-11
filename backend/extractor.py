@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 import json
 import logging
 import os
@@ -105,16 +105,23 @@ def segment_decisions_text(text: str) -> List[ItemChunk]:
 MOTION_EXTRACTION_INSTRUCTIONS = """
 You are helping summarize ONE Toronto council or committee decision item.
 
-Task:
-- Decide whether this text contains a substantive decision that affects residents
-  (e.g., funding approvals, bylaw changes, policies, programs).
-- Ignore purely procedural items (approving agenda, adopting minutes, adjournment,
-  declarations of interest, going in/out of closed session, receiving information only).
+Your job is to turn each item into a clear, resident‑friendly summary card.
 
-If there is NO substantive decision, return an empty JSON list: []
+Very important behaviour:
+- **Almost always produce ONE motion object.** Only return [] for items that are
+  *purely procedural* like:
+  - adoption of minutes with no new decision
+  - calling the meeting to order / adjournment
+  - going in / out of closed session
+  - declaring conflicts of interest
+- Items with decision types like ACTION, INFORMATION, PRESENTATION, or with a
+  clear recommendation (even if the Status is "Received") should still be
+  treated as substantive and summarized.
+- If you are unsure whether the item is substantive or procedural, **assume it
+  is substantive** and return one motion object.
 
-If there IS a substantive decision, return a JSON list with exactly ONE object
-with the following keys:
+Return a JSON list with exactly ONE object (or [] only for clearly trivial
+procedural items) with the following keys:
 - "title": short, human-readable headline (plain language).
 - "summary": 2–4 sentences in plain language explaining what was decided.
 - "status": one of ["PASSED", "FAILED", "DEFERRED", "AMENDED", "RECEIVED"].
@@ -151,6 +158,42 @@ def extract_motions_for_item(chunk: ItemChunk) -> List[Motion]:
     max_retries = int(os.getenv("GEMINI_MAX_RETRIES", "5"))
 
     last_exc: Exception | None = None
+    data: Any = None
+
+    def _parse_json_strict(raw: str) -> Any:
+        """Be tolerant of minor formatting issues while still expecting JSON.
+
+        - Strips common ```json fences.
+        - If raw contains leading/trailing text, tries to isolate the first JSON
+          object/array block.
+        """
+        text = raw.strip()
+        if text.startswith("```"):
+            # Remove ``` or ```json fences
+            text = re.sub(r"^```(?:json)?", "", text).strip()
+            if "```" in text:
+                text = text.rsplit("```", 1)[0].strip()
+
+        # Fast path
+        try:
+            return json.loads(text)
+        except Exception:
+            pass
+
+        # Try to extract the first top-level JSON object/array
+        obj_start = text.find("{")
+        arr_start = text.find("[")
+        candidates = [p for p in [obj_start, arr_start] if p != -1]
+        if not candidates:
+            raise
+        start = min(candidates)
+        sub = text[start:]
+        # Heuristic: trim after the last matching ] or }
+        last_brace = max(sub.rfind("}"), sub.rfind("]"))
+        if last_brace != -1:
+            sub = sub[: last_brace + 1]
+        return json.loads(sub)
+
     for attempt in range(max_retries):
         if min_delay_s > 0:
             time.sleep(min_delay_s)
@@ -160,9 +203,8 @@ def extract_motions_for_item(chunk: ItemChunk) -> List[Motion]:
                 contents=prompt,
                 config=config,
             )
-            # google-genai returns .text for JSON responses
             raw_text = response.text or ""
-            data = json.loads(raw_text)
+            data = _parse_json_strict(raw_text)
             last_exc = None
             break
         except ClientError as exc:
@@ -193,7 +235,11 @@ def extract_motions_for_item(chunk: ItemChunk) -> List[Motion]:
             return []
         except Exception as exc:  # noqa: BLE001 - we log and fall back
             last_exc = exc
-            logger.exception("Gemini extraction failed for item %s: %s", chunk.item_id, exc)
+            logger.exception(
+                "Gemini extraction failed or returned non-JSON for item %s: %s",
+                chunk.item_id,
+                exc,
+            )
             return []
 
     if last_exc is not None:

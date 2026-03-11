@@ -11,6 +11,24 @@ function supabaseFetch(path, options = {}) {
     'Content-Type': 'application/json',
     ...options.headers,
   };
+  // #region agent log
+  fetch('http://127.0.0.1:7648/ingest/d86acdd7-74f9-4729-a0db-67bd7ef158b4', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Debug-Session-Id': '37166d',
+    },
+    body: JSON.stringify({
+      sessionId: '37166d',
+      runId: 'run1',
+      hypothesisId: 'H3',
+      location: 'frontend/app.js:supabaseFetch',
+      message: 'Supabase fetch invoked',
+      data: { path, hasOptions: !!options },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion agent log
   return fetch(url, { ...options, headers });
 }
 
@@ -100,6 +118,28 @@ async function initTimeline() {
     if (USE_SUPABASE) {
       const response = await supabaseFetch('/meetings?select=*&order=date.desc');
       const data = await response.json();
+      // #region agent log
+      fetch('http://127.0.0.1:7648/ingest/d86acdd7-74f9-4729-a0db-67bd7ef158b4', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Debug-Session-Id': '37166d',
+        },
+        body: JSON.stringify({
+          sessionId: '37166d',
+          runId: 'run1',
+          hypothesisId: 'H1',
+          location: 'frontend/app.js:initTimeline',
+          message: 'Supabase meetings response',
+          data: {
+            ok: response.ok,
+            status: response.status,
+            count: Array.isArray(data) ? data.length : null,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion agent log
       if (!response.ok) throw new Error(data.message || 'Failed to fetch meetings');
       meetings = Array.isArray(data) ? data : [];
     } else {
@@ -395,6 +435,29 @@ function renderTimeline(meetingsList) {
     (a, b) => parseDate(b.date || '') - parseDate(a.date || ''),
   );
 
+  // #region agent log
+  fetch('http://127.0.0.1:7648/ingest/d86acdd7-74f9-4729-a0db-67bd7ef158b4', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Debug-Session-Id': '37166d',
+    },
+    body: JSON.stringify({
+      sessionId: '37166d',
+      runId: 'run1',
+      hypothesisId: 'H4',
+      location: 'frontend/app.js:renderTimeline',
+      message: 'Timeline render counts',
+      data: {
+        total: Array.isArray(meetingsList) ? meetingsList.length : null,
+        filteredByRegion: Array.isArray(filteredByRegion) ? filteredByRegion.length : null,
+        filteredVisible: Array.isArray(filtered) ? filtered.length : null,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion agent log
+
   sortedMeetings.forEach((meeting) => {
     const item = document.createElement('button');
     item.className = 'timeline-item';
@@ -477,6 +540,29 @@ async function loadMeeting(meetingCode) {
       const enc = encodeURIComponent(meetingCode);
       const response = await supabaseFetch(`/meeting_details?meeting_code=eq.${enc}&select=detail`);
       const raw = await response.json();
+      // #region agent log
+      fetch('http://127.0.0.1:7648/ingest/d86acdd7-74f9-4729-a0db-67bd7ef158b4', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Debug-Session-Id': '37166d',
+        },
+        body: JSON.stringify({
+          sessionId: '37166d',
+          runId: 'run1',
+          hypothesisId: 'H2',
+          location: 'frontend/app.js:loadMeeting',
+          message: 'Supabase meeting_details response',
+          data: {
+            ok: response.ok,
+            status: response.status,
+            hasArray: Array.isArray(raw),
+            rowCount: Array.isArray(raw) ? raw.length : raw ? 1 : 0,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion agent log
       if (!response.ok) throw new Error(raw.message || 'Failed to load meeting');
       const row = Array.isArray(raw) ? raw[0] : raw;
       if (!row || row.detail == null) throw new Error('Meeting details not found. Run the daily refresh (e.g. GitHub Actions) to populate summaries.');

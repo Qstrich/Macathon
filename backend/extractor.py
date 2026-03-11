@@ -22,7 +22,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 logger = logging.getLogger("extractor")
 
 # Default Gemini model; can be overridden with GEMINI_MODEL_ID env var
-DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview")
+DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL_ID", "gemini-3.1-flash-lite-preview")
 
 
 @dataclass
@@ -152,50 +152,38 @@ def segment_decisions_text(text: str) -> List[ItemChunk]:
 
 
 MOTION_EXTRACTION_INSTRUCTIONS = """
-You are helping summarize ONE Toronto council, committee, or board decision item.
+You are an expert civic data parser. Your task is to extract ONE specific type of information from Toronto meeting minutes: Official Agenda Items.
 
-Your job is to turn each item into a clear, resident‑friendly summary card.
+CRITICAL RULE: Your output must be STRICTLY a valid JSON array matching the exact schema below. Do not add any new keys. Do not output any text, markdown, or backticks before or after the JSON.
 
-Very important behaviour:
-- **Almost always produce ONE motion object.** Only return [] for items that are
-  *clearly and purely procedural* like:
-  - adoption/confirmation of previous minutes with no new decision
-  - calling the meeting to order / adjournment
-  - going in / out of closed session
-  - declaring conflicts of interest
-- Items from Council, Community Councils, the Executive Committee, the General
-  Government Committee, and other boards/committees should almost always be
-  treated as **substantive** if they involve a decision, direction, approval,
-  or receipt of a report.
-- When the decision text uses labels like "Adopted", "Adopted as amended",
-  "Carried", "Carried as amended", "Approved", or similar, you MUST treat this
-  as a real decision and pick the closest normalized status:
-  - Use "PASSED" for clearly adopted/carried/approved decisions.
-  - Use "AMENDED" when the decision is explicitly adopted or carried **as
-    amended**.
-  - Use "RECEIVED" when the item is clearly being received for information only.
-  - Use "DEFERRED" when the item is being deferred, referred, or sent to
-    another body/time.
-- Items with decision types like ACTION, INFORMATION, PRESENTATION, or with a
-  clear recommendation (even if the Status is "Received") should still be
-  treated as substantive and summarized.
-- If you are unsure whether the item is substantive or procedural, **assume it
-  is substantive** and return one motion object.
+### HOW TO FIND THE ITEMS (STRICT ENFORCEMENT):
+1. THE HARD STOP: Read the document top to bottom, but STOP reading entirely the moment you see "Source: Toronto City Clerk" or "Select Language". Everything after this is website boilerplate. Do not let it truncate your output.
+2. THE TRIGGER: Scan the text for Official Item Codes. These always look like 2-3 uppercase letters, a number, a decimal, and another number (Examples: DB14.1, RA24.2, HP4.1).
+3. THE RULE: For EVERY SINGLE Official Item Code you find, you MUST create exactly one JSON object in your output array. 
+4. DO NOT OVERTHINK IT: Do not evaluate whether an item seems "trivial", "procedural", or is just a "Report" or "By-law". If it has an Official Item Code, it is substantive by definition. You MUST extract it. No exceptions.
+5. IGNORE UNCODED TEXT: Procedural motions at the bottom (like "Motion to Adopt Minutes") do not have Item Codes. Skip them entirely.
 
-Return a JSON list with exactly ONE object (or [] only for clearly trivial
-procedural items) with the following keys:
-- "title": short, human-readable headline (plain language).
-- "summary": 2–4 sentences in plain language explaining what was decided.
-- "status": one of ["PASSED", "FAILED", "DEFERRED", "AMENDED", "RECEIVED"].
-- "category": one of ["housing", "transportation", "budget", "environment",
-  "services", "governance", "other"].
-- "impact_tags": 2–5 short tags describing who/what is affected (e.g.,
-  ["affordable housing", "downtown", "city funding"]).
-- "full_text": the key part of the decision text copied verbatim or nearly
-  verbatim from the source.
+### STATUS MAPPING:
+- "PASSED": Adopted, enacted, carried, approved.
+- "AMENDED": Adopted/carried as amended.
+- "RECEIVED": Received for information.
+- "DEFERRED": Deferred, referred, sent to another body.
+- "FAILED": Explicitly failed or rejected.
 
-Output:
-- Strictly JSON only (no explanations), either [] or [ { ... } ].
+### OUTPUT FORMAT:
+[
+  {
+    "title": "<Include the Item Code and the short headline, e.g., 'RA24.1 - Chief Executive Officer’s Report'>",
+    "summary": "<2-4 sentences explaining exactly what was decided. Be specific about money, locations, or key actions.>",
+    "status": "<MUST be one of: PASSED, FAILED, DEFERRED, AMENDED, RECEIVED>",
+    "category": "<MUST be one of: housing, transportation, budget, environment, services, governance, other>",
+    "impact_tags": [
+      "<Tag 1>",
+      "<Tag 2>"
+    ],
+    "full_text": "<The key part of the decision text copied verbatim from the source>"
+  }
+]
 """
 
 

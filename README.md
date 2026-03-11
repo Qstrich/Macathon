@@ -52,14 +52,19 @@
 
 ---
 
-## Quick start
+## Quick start (local dev with API)
 
 1. **Clone and cd** into the project root
 2. Follow **[LOCAL_SETUP.md](LOCAL_SETUP.md)** for prerequisites, venv, `.env`, and scraper setup
 3. **Start backend:** `uvicorn backend.main:app --reload --port 8000`
 4. **Serve frontend:** `python -m http.server 5500` from `frontend/` → open http://localhost:5500
 
-Meetings are built on demand: the first time you open a meeting, Gemini runs (~30–60 s); after that it’s instant from cache. Optionally run `python -m backend.refresh_cache` to preload everything before a demo.
+Meetings are built on demand: the first time you open a meeting via the backend (`/api/meetings/{code}`), Gemini runs (~30–60 s) and writes a `MeetingDetail` with motions to `data/cache/meetings/*.json` and (optionally) Supabase. After that it’s instant from cache.
+
+For bulk/offline extraction you can run:
+
+- **Scrape + build cache locally:** `python -m backend.refresh_cache --max-meetings 3`
+- **Inspect counts:** `python -m backend.debug_counts`
 
 ---
 
@@ -74,10 +79,12 @@ Macathon/
 ├── LOCAL_SETUP.md          # Full setup and run guide
 ├── backend/
 │   ├── main.py             # API routes, cache logic
-│   ├── extractor.py        # Gemini motion extraction
+│   ├── extractor.py        # Gemini motion extraction + status normalization
 │   ├── models.py           # Pydantic models
-│   ├── scraper_bridge.py   # Calls Node scraper
-│   └── refresh_cache.py    # Offline precompute script
+│   ├── scraper_bridge.py   # Calls Node scraper and parses scraper/output/index.json
+│   ├── supabase_client.py  # Reads/writes meetings + meeting_details in Supabase
+│   ├── refresh_cache.py    # Offline precompute script (overviews + full details)
+│   └── debug_counts.py     # Utility to print total motions and status breakdown
 ├── frontend/
 │   ├── index.html
 │   ├── app.js
@@ -96,23 +103,23 @@ Macathon/
 
 ---
 
-## API overview
+## API overview (backend mode)
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/meetings` | List meetings with motion counts and topics |
-| `GET /api/meetings/{code}` | Meeting detail with motions (lazy Gemini + cache) |
-| `GET /api/stats` | Global stats across cached meetings |
-| `POST /api/refresh` | Re-run scraper (requires `ALLOW_LIVE_EXTRACTION`) |
-| `POST /api/prewarm` | Pre-cache all meeting details |
+| `GET /api/meetings` | List meetings with motion counts, topics, region, and detail_cached flag |
+| `GET /api/meetings/{code}` | Meeting detail with motions (lazy Gemini + cache + optional Supabase mirror) |
+| `GET /api/stats` | Global stats across cached meetings (only those with motions) |
+| `POST /api/refresh` | Re-run scraper (requires `ALLOW_LIVE_EXTRACTION=true`) and rebuild index |
+| `POST /api/prewarm` | Pre-cache all meeting details for the current meetings list |
 
 ---
 
 ## Deployment
 
-### GitHub Pages + Supabase only (no Cloud Run)
+### GitHub Pages + Supabase only (no FastAPI in production)
 
-You can run the app with **only GitHub Pages + Supabase**. The frontend reads from Supabase directly; no API server or Google Cloud is required.
+The production setup for this repo is **GitHub Pages + Supabase**. The frontend (`frontend/index.html`, `app.js`, `styles.css`) is served as static files (e.g. via GitHub Pages), and it reads meeting data directly from Supabase using the anon key — no FastAPI server or Cloud Run is required at runtime.
 
 1. **Supabase:** Create tables and allow public read (Supabase → SQL Editor):
 
@@ -140,7 +147,7 @@ create policy "Allow public read meetings" on public.meetings for select to anon
 create policy "Allow public read meeting_details" on public.meeting_details for select to anon using (true);
 ```
 
-2. **Frontend config:** In `frontend/index.html`, set (or deploy with) your Supabase project URL and **anon** key (not the service role key):
+2. **Frontend config (Supabase-only mode):** In `frontend/index.html`, set (or deploy with) your Supabase project URL and **anon** key (not the service role key). When these are present, the frontend will:
 
 ```html
 <script>
@@ -151,15 +158,23 @@ create policy "Allow public read meeting_details" on public.meeting_details for 
 </script>
 ```
 
-3. **Populate data:** Run the scraper + Gemini and write to Supabase via GitHub Actions (add repo secrets: `GOOGLE_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) and run the "Daily scrape + refresh Supabase cache" workflow, or run locally: `python -m backend.refresh_cache --max-meetings 3`.
+- Fetch the meeting list from `/rest/v1/meetings?select=*&order=date.desc`
+- Fetch individual meeting details from `/rest/v1/meeting_details?meeting_code=eq.{code}&select=detail`
+- Hide admin-only buttons like “Refresh from council” and “Preload all meetings” (those are intended to run via CI, not from the browser)
 
-4. **Host:** Push the frontend to GitHub and enable Pages (e.g. from `Macathon/Macathon/frontend` or your chosen branch/folder). The site will load meetings and summarized motion cards from Supabase.
+3. **Populate data (Supabase):**
+- **Via GitHub Actions:** Use `.github/workflows/daily_refresh.yml` to run the Node scraper + Gemini extraction on a schedule and write into Supabase. Configure repo secrets: `GOOGLE_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+- **Locally (one-off):** With env vars set (`GOOGLE_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), run:
+  - `python -m backend.refresh_cache --max-meetings 3`
+  - Optionally inspect: `python -m backend.debug_counts`
 
-- **Config (with API):** If you use a backend, set `window.APP_CONFIG = { apiUrl: 'https://your-api.example.com' }` instead of Supabase keys.
-- **Security:** Protect or disable `POST /api/refresh` and `POST /api/prewarm` in production when using an API.
-- **Presentation mode:** Admin buttons (Refresh, Preload) are hidden when using Supabase-only; they run via GitHub Actions.
+4. **Host:** Push the frontend to GitHub and enable Pages (e.g. from the `frontend/` folder on the `main` branch). The site will load meetings and summarized motion cards from Supabase.
 
-### Docker + Cloud Run (optional)
+- **Config (with API instead of Supabase):** If you host the FastAPI backend somewhere, set `window.APP_CONFIG = { apiUrl: 'https://your-api.example.com' }` instead of Supabase keys in `index.html`. The frontend will then call `/api/meetings` and `/api/meetings/{code}` on that API instead of Supabase.
+- **Security (backend mode):** Protect or disable `POST /api/refresh` and `POST /api/prewarm` in production when using a public API.
+- **Timeline filtering:** In Supabase mode, meetings that have `detail_cached = true` and `motion_count = 0` are hidden from the timeline by the frontend so users only see meetings with actual decisions.
+
+### Docker + Cloud Run (optional) (legacy)
 
 - **Build image:**
   - From the repo root (this folder), run:

@@ -16,12 +16,18 @@ This will:
 """
 
 import logging
+import argparse
 from pathlib import Path
 from typing import List
 
 from . import main as backend_main
 from .extractor import build_meeting_detail_from_scraped
 from .scraper_bridge import ScrapedMeetingFiles, load_scraped_from_disk, run_node_scraper
+from .supabase_client import (
+  is_configured as supabase_is_configured,
+  save_meeting_detail as sb_save_meeting_detail,
+  save_meetings_index as sb_save_meetings_index,
+)
 
 
 logger = logging.getLogger("refresh_cache")
@@ -40,18 +46,28 @@ def _load_or_scrape() -> List[ScrapedMeetingFiles]:
   return scraped
 
 
-def refresh_cache(overviews_only: bool = False) -> None:
+def refresh_cache(overviews_only: bool = False, max_meetings: int | None = None) -> None:
   """Rebuild cached overviews and (optionally) full meeting details."""
+  logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
   # Ensure env and API keys are loaded
   backend_main._load_env_and_validate_api_key()  # type: ignore[attr-defined]
 
   scraped = _load_or_scrape()
+  if max_meetings is not None and max_meetings > 0:
+    scraped = scraped[:max_meetings]
 
   # Build and persist MeetingOverview list
   overviews = backend_main._build_meeting_overviews(scraped)  # type: ignore[attr-defined]
   backend_main._save_meetings_cache(overviews)  # type: ignore[attr-defined]
   backend_main._save_scraped_index(scraped)  # type: ignore[attr-defined]
   logger.info("Saved meetings_index.json and scraped_meetings.json for %d meetings.", len(overviews))
+  if supabase_is_configured():
+    try:
+      sb_save_meetings_index(overviews)
+      logger.info("Mirrored %d meeting overviews to Supabase.", len(overviews))
+    except Exception as exc:  # noqa: BLE001
+      logger.warning("Failed to mirror meeting overviews to Supabase: %s", exc)
 
   if overviews_only:
     return
@@ -80,14 +96,39 @@ def refresh_cache(overviews_only: bool = False) -> None:
     logger.info("Building detail for %s", meeting_code)
     detail = build_meeting_detail_from_scraped(meeting_code, overview, raw)
     _save_meeting_detail(detail)
+    if supabase_is_configured():
+      try:
+        sb_save_meeting_detail(detail)
+      except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to mirror meeting detail %s to Supabase: %s", meeting_code, exc)
 
   # Persist updated overviews (with motion_count/topics) back to meetings_index.json
   backend_main._save_meetings_cache(list(code_to_overview.values()))  # type: ignore[attr-defined]
   logger.info("Finished building MeetingDetail cache and updated meetings_index.json for %d meetings.", len(scraped))
+  if supabase_is_configured():
+    try:
+      sb_save_meetings_index(list(code_to_overview.values()))
+      logger.info("Mirrored updated meeting overviews (with topics/counts) to Supabase.")
+    except Exception as exc:  # noqa: BLE001
+      logger.warning("Failed to mirror updated meeting overviews to Supabase: %s", exc)
 
 
 def main() -> None:
-  refresh_cache(overviews_only=False)
+  parser = argparse.ArgumentParser(description="Build meeting cache (optionally overviews only).")
+  parser.add_argument(
+    "--overviews-only",
+    action="store_true",
+    help="Only scrape and save MeetingOverview index (no Gemini extraction).",
+  )
+  parser.add_argument(
+    "--max-meetings",
+    type=int,
+    default=0,
+    help="Limit number of meetings processed (0 = no limit).",
+  )
+  args = parser.parse_args()
+  limit = int(args.max_meetings) if int(args.max_meetings) > 0 else None
+  refresh_cache(overviews_only=bool(args.overviews_only), max_meetings=limit)
 
 
 if __name__ == "__main__":

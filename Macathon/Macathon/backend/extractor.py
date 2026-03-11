@@ -7,10 +7,12 @@ import json
 import logging
 import os
 import re
+import time
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types as genai_types
+from google.genai.errors import ClientError
 
 from .models import MeetingDetail, MeetingOverview, Motion
 from .scraper_bridge import ScrapedMeetingFiles
@@ -144,17 +146,58 @@ def extract_motions_for_item(chunk: ItemChunk) -> List[Motion]:
 
     prompt = _build_item_prompt(chunk)
 
-    try:
-        response = client.models.generate_content(
-            model=DEFAULT_GEMINI_MODEL,
-            contents=prompt,
-            config=config,
-        )
-        # google-genai returns .text for JSON responses
-        raw_text = response.text or ""
-        data = json.loads(raw_text)
-    except Exception as exc:  # noqa: BLE001 - we log and fall back
-        logger.exception("Gemini extraction failed for item %s: %s", chunk.item_id, exc)
+    # Free tier is heavily rate limited; throttle and retry on 429.
+    min_delay_s = float(os.getenv("GEMINI_MIN_DELAY_SECONDS", "12"))
+    max_retries = int(os.getenv("GEMINI_MAX_RETRIES", "5"))
+
+    last_exc: Exception | None = None
+    for attempt in range(max_retries):
+        if min_delay_s > 0:
+            time.sleep(min_delay_s)
+        try:
+            response = client.models.generate_content(
+                model=DEFAULT_GEMINI_MODEL,
+                contents=prompt,
+                config=config,
+            )
+            # google-genai returns .text for JSON responses
+            raw_text = response.text or ""
+            data = json.loads(raw_text)
+            last_exc = None
+            break
+        except ClientError as exc:
+            last_exc = exc
+            # Respect server suggested retry delay when present
+            try:
+                err = (exc.args[0] if exc.args else {}) or {}
+                details = (err.get("error") or {}).get("details") or []
+                retry_info = next((d for d in details if d.get("@type", "").endswith("RetryInfo")), None)
+                retry_delay = (retry_info or {}).get("retryDelay") or ""
+                delay_s = int(retry_delay.strip("s")) if str(retry_delay).endswith("s") else None
+            except Exception:
+                delay_s = None
+
+            if getattr(exc, "status_code", None) == 429 or "RESOURCE_EXHAUSTED" in str(exc):
+                wait_s = float(delay_s) if delay_s else (30.0 * (attempt + 1))
+                logger.warning(
+                    "Gemini rate limited for item %s; retrying in %.1fs (attempt %d/%d).",
+                    chunk.item_id,
+                    wait_s,
+                    attempt + 1,
+                    max_retries,
+                )
+                time.sleep(wait_s)
+                continue
+
+            logger.exception("Gemini extraction failed for item %s: %s", chunk.item_id, exc)
+            return []
+        except Exception as exc:  # noqa: BLE001 - we log and fall back
+            last_exc = exc
+            logger.exception("Gemini extraction failed for item %s: %s", chunk.item_id, exc)
+            return []
+
+    if last_exc is not None:
+        logger.exception("Gemini extraction ultimately failed for item %s: %s", chunk.item_id, last_exc)
         return []
 
     motions: List[Motion] = []

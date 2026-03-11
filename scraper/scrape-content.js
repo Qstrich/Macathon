@@ -40,11 +40,13 @@ function ensureCleanOutputDir() {
   });
 
   const page = await context.newPage();
+  // CI can be slow; use 60s for all operations so "Recent" click and table wait don't hit 30s default
+  page.setDefaultTimeout(60000);
 
   console.log(`Navigating to ${TARGET_URL} ...`);
-  await page.goto(TARGET_URL, { waitUntil: "networkidle", timeout: 60000 });
-  // Give Angular time to render the SPA
-  await page.waitForTimeout(8000);
+  await page.goto(TARGET_URL, { waitUntil: "networkidle", timeout: 90000 });
+  // Give Angular time to render the SPA (longer in CI)
+  await page.waitForTimeout(15000);
 
   // Wait for meetings table (may need to click "Recent" tab first)
   let table = await page.$(TABLE_SELECTOR);
@@ -57,6 +59,7 @@ function ensureCleanOutputDir() {
       table = await page.$(TABLE_SELECTOR);
     } catch (err) {
       console.log('Could not click "Recent" tab, continuing with current view. Error:', err && err.message ? err.message : err);
+      table = await page.$(TABLE_SELECTOR);
     }
   }
   if (!table) {

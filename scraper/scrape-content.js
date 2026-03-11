@@ -49,11 +49,15 @@ function ensureCleanOutputDir() {
   // Wait for meetings table (may need to click "Recent" tab first)
   let table = await page.$(TABLE_SELECTOR);
   if (!table) {
-    console.log('Clicking the "Recent" tab...');
-    const recentTab = page.getByText("Recent", { exact: true }).first();
-    await recentTab.click({ timeout: 30000 });
-    await page.waitForTimeout(3000);
-    table = await page.$(TABLE_SELECTOR);
+    console.log('Trying to switch to "Recent" tab (if present)...');
+    try {
+      const recentTab = page.getByText("Recent", { exact: true }).first();
+      await recentTab.click({ timeout: 60000 });
+      await page.waitForTimeout(5000);
+      table = await page.$(TABLE_SELECTOR);
+    } catch (err) {
+      console.log('Could not click "Recent" tab, continuing with current view. Error:', err && err.message ? err.message : err);
+    }
   }
   if (!table) {
     throw new Error("Could not find meetings table. The Toronto council page may have changed or be slow to load.");

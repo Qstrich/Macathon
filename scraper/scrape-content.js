@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const TARGET_URL = "https://secure.toronto.ca/council/#/highlights";
-const TABLE_SELECTOR = ".table.table-hover.recent-meetings-table";
+const TABLE_SELECTOR = ".table.table-hover.recent-meetings-table"; // legacy; page layout may change
 const TABS_SELECTOR = ".meeting-info-tabs";
 const OUTPUT_DIR = path.join(__dirname, "output");
 
@@ -48,16 +48,19 @@ function ensureCleanOutputDir() {
   // Give Angular time to render the SPA (longer in CI)
   await page.waitForTimeout(15000);
 
-  // Wait directly for the recent meetings table; do NOT try to click "Recent"
-  // tab here because that locator is flaky in CI and causes timeouts.
-  const table = await page.waitForSelector(TABLE_SELECTOR, { timeout: 60000 }).catch(() => null);
-  if (!table) {
-    throw new Error("Could not find meetings table (.recent-meetings-table). The Toronto council page may have changed or be slow to load.");
-  }
-
-  const meetingLinks = await page.$$eval(`${TABLE_SELECTOR} a`, (anchors) =>
+  // The Toronto highlights page layout is brittle and the old selector
+  // `.recent-meetings-table` is not always present in CI. Instead of depending
+  // on that table, collect meeting links by URL pattern and text.
+  const meetingLinks = await page.$$eval("a", (anchors) =>
     anchors
-      .filter((a) => !a.textContent.includes("Video Archive"))
+      .filter((a) => {
+        const href = a.href || "";
+        const text = (a.textContent || "").trim();
+        if (!href.includes("council/meeting.do")) return false;
+        if (!text) return false;
+        if (/Video Archive/i.test(text)) return false;
+        return true;
+      })
       .map((a) => ({ text: a.textContent.trim(), href: a.href }))
   );
 

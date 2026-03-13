@@ -47,5 +47,5 @@ jobs:
       - name: Scrape + extract (Gemini) + upload to Supabase
         working-directory: .
         run: |
-          python -m backend.refresh_cache --max-meetings 3
+          python -m backend.refresh_cache 
 

@@ -40,7 +40,7 @@ function ensureCleanOutputDir() {
   });
 
   const page = await context.newPage();
-  // CI can be slow; use 60s for all operations so "Recent" click and table wait don't hit 30s default
+  // CI can be slow; use 60s for all operations
   page.setDefaultTimeout(60000);
 
   console.log(`Navigating to ${TARGET_URL} ...`);
@@ -48,22 +48,11 @@ function ensureCleanOutputDir() {
   // Give Angular time to render the SPA (longer in CI)
   await page.waitForTimeout(15000);
 
-  // Wait for meetings table (may need to click "Recent" tab first)
-  let table = await page.$(TABLE_SELECTOR);
+  // Wait directly for the recent meetings table; do NOT try to click "Recent"
+  // tab here because that locator is flaky in CI and causes timeouts.
+  const table = await page.waitForSelector(TABLE_SELECTOR, { timeout: 60000 }).catch(() => null);
   if (!table) {
-    console.log('Trying to switch to "Recent" tab (if present)...');
-    try {
-      const recentTab = page.getByText("Recent", { exact: true }).first();
-      await recentTab.click({ timeout: 60000 });
-      await page.waitForTimeout(5000);
-      table = await page.$(TABLE_SELECTOR);
-    } catch (err) {
-      console.log('Could not click "Recent" tab, continuing with current view. Error:', err && err.message ? err.message : err);
-      table = await page.$(TABLE_SELECTOR);
-    }
-  }
-  if (!table) {
-    throw new Error("Could not find meetings table. The Toronto council page may have changed or be slow to load.");
+    throw new Error("Could not find meetings table (.recent-meetings-table). The Toronto council page may have changed or be slow to load.");
   }
 
   const meetingLinks = await page.$$eval(`${TABLE_SELECTOR} a`, (anchors) =>

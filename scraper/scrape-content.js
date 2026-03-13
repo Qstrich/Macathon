@@ -56,8 +56,15 @@ function ensureCleanOutputDir() {
       .filter((a) => {
         const href = a.href || "";
         const text = (a.textContent || "").trim();
-        // Accept both meeting landing pages and direct report pages.
-        if (!href.includes("council/meeting.do") && !href.includes("council/report.do?meeting=")) return false;
+        // Accept:
+        // - highlights links (council/#/committees/...)
+        // - meeting landing pages (council/meeting.do)
+        // - direct report pages (council/report.do?meeting=...)
+        const isHighlightsLink =
+          href.includes("/council/#/committees/") || href.includes("#/committees/");
+        const isMeetingLanding = href.includes("council/meeting.do");
+        const isReport = href.includes("council/report.do?meeting=");
+        if (!isHighlightsLink && !isMeetingLanding && !isReport) return false;
         if (!text) return false;
         return true;
       })

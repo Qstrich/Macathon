@@ -16,6 +16,7 @@ This will:
 """
 
 import logging
+import os
 import argparse
 from pathlib import Path
 from typing import List
@@ -34,13 +35,25 @@ logger = logging.getLogger("refresh_cache")
 
 
 def _load_or_scrape() -> List[ScrapedMeetingFiles]:
-  """Load scraper output, or run the scraper once if needed."""
-  scraped = load_scraped_from_disk()
-  if scraped:
-    logger.info("Loaded %d meetings from existing scraper output.", len(scraped))
-    return scraped
+  """Load scraper output, or run the scraper once if needed.
 
-  logger.info("No scraper output found; running Node scraper once...")
+  Set FORCE_SCRAPE=true in the environment to always re-run the Node scraper,
+  even when existing output is present. This is useful after changing the
+  scraper or when you want to refresh meetings from the live site.
+  """
+  force = os.getenv("FORCE_SCRAPE", "false").lower() in {"1", "true", "yes"}
+
+  if not force:
+    scraped = load_scraped_from_disk()
+    if scraped:
+      logger.info("Loaded %d meetings from existing scraper output.", len(scraped))
+      return scraped
+
+  if force:
+    logger.info("FORCE_SCRAPE is set; running Node scraper to refresh output...")
+  else:
+    logger.info("No scraper output found; running Node scraper once...")
+
   scraped = run_node_scraper()
   logger.info("Scraper produced %d meetings.", len(scraped))
   return scraped

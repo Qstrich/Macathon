@@ -56,9 +56,9 @@ function ensureCleanOutputDir() {
       .filter((a) => {
         const href = a.href || "";
         const text = (a.textContent || "").trim();
-        if (!href.includes("council/meeting.do")) return false;
+        // Accept both meeting landing pages and direct report pages.
+        if (!href.includes("council/meeting.do") && !href.includes("council/report.do?meeting=")) return false;
         if (!text) return false;
-        if (/Video Archive/i.test(text)) return false;
         return true;
       })
       .map((a) => ({ text: a.textContent.trim(), href: a.href }))
@@ -74,29 +74,46 @@ function ensureCleanOutputDir() {
     await page.goto("about:blank");
     await page.goto(meeting.href, { waitUntil: "networkidle" });
 
-    try {
-      await page.waitForSelector(TABS_SELECTOR, { timeout: 10000 });
-    } catch {
-      console.log("   (no meeting-info-tabs found, skipping)\n");
-      index.push({
-        meetingText: meeting.text,
-        meetingUrl: meeting.href,
-        decisionsUrl: null,
-        minutesUrl: null,
-        files: {
-          decisions: null,
-          minutes: null,
-        },
-      });
-      continue;
-    }
+    // Try to find Decisions/Minutes tabs first; if that fails (e.g., video or
+    // different layout), fall back to scanning links for report.do?meeting=...
+    let decisions = null;
+    let minutes = null;
 
-    const tabLinks = await page.$$eval(`${TABS_SELECTOR} a`, (anchors) =>
-      anchors.map((a) => ({ text: a.textContent.trim(), href: a.href }))
+    const hasTabs = await page.waitForSelector(TABS_SELECTOR, { timeout: 10000 }).then(
+      () => true,
+      () => false,
     );
 
-    const decisions = tabLinks.find((l) => l.text === "Decisions");
-    const minutes = tabLinks.find((l) => l.text === "Minutes");
+    if (hasTabs) {
+      const tabLinks = await page.$$eval(`${TABS_SELECTOR} a`, (anchors) =>
+        anchors.map((a) => ({ text: a.textContent.trim(), href: a.href })),
+      );
+      decisions = tabLinks.find((l) => l.text === "Decisions") || null;
+      minutes = tabLinks.find((l) => l.text === "Minutes") || null;
+    }
+
+    // Fallback: some entries may only link to a video or a different view; look
+    // for direct minutes/decisions report links on the page.
+    if (!decisions || !minutes) {
+      const reportLinks = await page.$$eval("a", (anchors) =>
+        anchors
+          .map((a) => ({ text: (a.textContent || "").trim(), href: a.href || "" }))
+          .filter((l) => l.href.includes("council/report.do?meeting=")),
+      );
+      if (!decisions) {
+        decisions =
+          reportLinks.find((l) => /type=decisions/i.test(l.href)) ||
+          reportLinks.find((l) => /Decisions/i.test(l.text)) ||
+          null;
+      }
+      if (!minutes) {
+        minutes =
+          reportLinks.find((l) => /type=minutes/i.test(l.href)) ||
+          reportLinks.find((l) => /Minutes/i.test(l.text)) ||
+          null;
+      }
+    }
+
     const targets = [
       decisions && { type: "Decisions", href: decisions.href },
       minutes && { type: "Minutes", href: minutes.href },

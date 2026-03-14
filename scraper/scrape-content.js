@@ -113,12 +113,22 @@ function ensureCleanOutputDir() {
 
   console.log(`Navigating to ${TARGET_URL} ...`);
   await page.goto(TARGET_URL, { waitUntil: "networkidle", timeout: 90000 });
-  // Give Angular time to render the SPA (longer in CI)
-  await page.waitForTimeout(15000);
+  // Give Angular time to render the SPA. In CI/headless the highlights list often loads late.
+  const initialWait = headless ? 25000 : 15000;
+  await page.waitForTimeout(initialWait);
 
-  // The Toronto highlights page layout is brittle and behaves differently in CI.
-  // First, log a sample of all anchors so we can see what the page actually
-  // looks like in GitHub Actions.
+  // In headless (CI), wait until at least one meeting-like link exists so we don't collect too early.
+  if (headless) {
+    const meetingLinkSelector = "a[href*='/committees/'], a[href*='report.do?meeting='], a[href*='council/meeting.do']";
+    const found = await page.waitForSelector(meetingLinkSelector, { timeout: 55000 }).then(() => true).catch(() => false);
+    if (found) {
+      await page.waitForTimeout(5000);
+    } else {
+      console.log("Warning: no meeting links appeared after wait; collecting whatever is on the page.");
+    }
+  }
+
+  // Log a sample of all anchors for debugging (e.g. in GitHub Actions).
   const allLinks = await page.$$eval("a", (anchors) =>
     anchors.map((a) => ({
       text: (a.textContent || "").trim(),
@@ -133,20 +143,24 @@ function ensureCleanOutputDir() {
   // Then, select only links that look like real meetings.
   const meetingLinks = allLinks.filter((link) => {
     const { href, text } = link;
-    if (!text) return false;
     const isCommitteeLink = href.includes("/committees/");
     const isMeetingLanding = href.includes("council/meeting.do");
     const isReport = href.includes("council/report.do?meeting=");
     if (!isCommitteeLink && !isMeetingLanding && !isReport) return false;
+    // Require some visible text unless we only have href (e.g. headless rendered late)
+    if (!text && !href) return false;
 
     // Skip "Video Archive" links (duplicates of real meeting entries with ;video=true)
-    if (/Video Archive/i.test(text)) return false;
+    if (text && /Video Archive/i.test(text)) return false;
     // Skip non-meeting pages
-    if (/^e-Updates$/i.test(text)) return false;
-    if (/Registry of Declared Interests/i.test(text)) return false;
+    if (text && /^e-Updates$/i.test(text)) return false;
+    if (text && /Registry of Declared Interests/i.test(text)) return false;
 
     return true;
-  });
+  }).map((link) => ({
+    ...link,
+    text: link.text || link.href.split("/").pop() || "Meeting",
+  }));
 
   console.log(`\nFound ${meetingLinks.length} meeting links.\n`);
 

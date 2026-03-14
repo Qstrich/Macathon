@@ -101,10 +101,19 @@ function ensureCleanOutputDir() {
 
   // Run headed by default so the page renders (Toronto site often fails in headless). Set HEADLESS=true to hide browser.
   const headless = process.env.HEADLESS === "true" || process.env.HEADLESS === "1";
-  const browser = await chromium.launch({ headless });
+  const launchOptions = headless
+    ? {
+        headless: true,
+        args: ["--headless=new", "--disable-blink-features=AutomationControlled", "--no-sandbox"],
+        ignoreDefaultArgs: ["--enable-automation"],
+      }
+    : { headless: false };
+  const browser = await chromium.launch(launchOptions);
   const context = await browser.newContext({
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    viewport: { width: 1280, height: 720 },
+    locale: "en-CA",
   });
 
   const page = await context.newPage();
@@ -112,15 +121,22 @@ function ensureCleanOutputDir() {
   page.setDefaultTimeout(60000);
 
   console.log(`Navigating to ${TARGET_URL} ...`);
-  await page.goto(TARGET_URL, { waitUntil: "networkidle", timeout: 90000 });
+  await page.goto(TARGET_URL, { waitUntil: "load", timeout: 60000 });
   // Give Angular time to render the SPA. In CI/headless the highlights list often loads late.
-  const initialWait = headless ? 25000 : 15000;
+  const initialWait = headless ? 20000 : 12000;
   await page.waitForTimeout(initialWait);
+
+  // The page has "Recent" and "Current & Upcoming" tabs. Default view can be empty; click "Recent" to load the list.
+  const recentClick = await page.locator("text=Recent").first().click({ timeout: 15000 }).then(() => true).catch(() => false);
+  if (recentClick) {
+    console.log("Clicked 'Recent' tab.");
+    await page.waitForTimeout(headless ? 10000 : 5000);
+  }
 
   // In headless (CI), wait until at least one meeting-like link exists so we don't collect too early.
   if (headless) {
     const meetingLinkSelector = "a[href*='/committees/'], a[href*='report.do?meeting='], a[href*='council/meeting.do']";
-    const found = await page.waitForSelector(meetingLinkSelector, { timeout: 55000 }).then(() => true).catch(() => false);
+    const found = await page.waitForSelector(meetingLinkSelector, { timeout: 45000 }).then(() => true).catch(() => false);
     if (found) {
       await page.waitForTimeout(5000);
     } else {
@@ -129,13 +145,24 @@ function ensureCleanOutputDir() {
   }
 
   // Log a sample of all anchors for debugging (e.g. in GitHub Actions).
-  const allLinks = await page.$$eval("a", (anchors) =>
+  let allLinks = await page.$$eval("a", (anchors) =>
     anchors.map((a) => ({
       text: (a.textContent || "").trim(),
       href: a.href || "",
     })),
   );
   console.log(`Found ${allLinks.length} total <a> elements on highlights page.`);
+
+  // In headless, if we have no meeting-like links yet, scroll to bottom and retry once (lazy-loaded content).
+  if (headless && !allLinks.some((l) => l.href && (l.href.includes("/committees/") || l.href.includes("report.do?meeting=")))) {
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(8000);
+    allLinks = await page.$$eval("a", (anchors) =>
+      anchors.map((a) => ({ text: (a.textContent || "").trim(), href: a.href || "" })),
+    );
+    console.log(`After scroll: ${allLinks.length} total <a> elements.`);
+  }
+
   allLinks.slice(0, 40).forEach((l, idx) => {
     console.log(`[link ${idx}] text="${l.text}" href="${l.href}"`);
   });

@@ -51,6 +51,15 @@ def refresh_cache(overviews_only: bool = False, max_meetings: int | None = None)
   if max_meetings is not None and max_meetings > 0:
     scraped = scraped[:max_meetings]
 
+  # When the scraper returns 0 (e.g. headless CI where Toronto SPA does not render),
+  # skip Supabase updates and do not delete existing meetings so we do not wipe the DB.
+  if len(scraped) == 0:
+    logger.warning(
+      "Scraper produced 0 meetings (common in headless CI). "
+      "Skipping cache build and Supabase update; existing DB data is left unchanged."
+    )
+    return
+
   # Build and persist MeetingOverview list
   overviews = backend_main._build_meeting_overviews(scraped)  # type: ignore[attr-defined]
   backend_main._save_meetings_cache(overviews)  # type: ignore[attr-defined]

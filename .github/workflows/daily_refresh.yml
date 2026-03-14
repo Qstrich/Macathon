@@ -15,7 +15,8 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       ALLOW_LIVE_EXTRACTION: "true"
-      HEADLESS: "true"
+      # Headed mode so the Toronto council SPA actually renders (headless returns 0 meetings).
+      HEADLESS: "false"
       GEMINI_MIN_DELAY_SECONDS: "12"
       GEMINI_MAX_RETRIES: "6"
     steps:
@@ -44,8 +45,10 @@ jobs:
           npm install
           npx playwright install --with-deps chromium
 
+      - name: Install virtual display (for headed browser in CI)
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
       - name: Scrape + extract (Gemini) + upload to Supabase
         working-directory: .
-        run: |
-          python -m backend.refresh_cache 
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" python -m backend.refresh_cache 
 

@@ -6,6 +6,74 @@ const TARGET_URL = "https://secure.toronto.ca/council/#/highlights";
 const TABLE_SELECTOR = ".table.table-hover.recent-meetings-table"; // legacy; page layout may change
 const TABS_SELECTOR = ".meeting-info-tabs";
 const OUTPUT_DIR = path.join(__dirname, "output");
+const REPORT_BASE = "https://secure.toronto.ca/council/report.do";
+
+/** Extract meeting code from report URL, e.g. report.do?meeting=2026.EX29&type=minutes -> 2026.EX29 */
+function extractMeetingCodeFromReportUrl(href) {
+  if (!href || typeof href !== "string") return null;
+  const m = href.match(/[?&]meeting=([^&\s]+)/);
+  return m ? m[1] : null;
+}
+
+/** Build the other report URL (minutes or decisions) when we have one. */
+function buildOtherReportUrl(existingHref, wantType) {
+  const code = extractMeetingCodeFromReportUrl(existingHref);
+  if (!code) return null;
+  return `${REPORT_BASE}?meeting=${encodeURIComponent(code)}&type=${wantType}`;
+}
+
+/** Collect Decisions and Minutes links from current page (tabs first, then scan all report.do links). */
+async function getDecisionsAndMinutes(page) {
+  let decisions = null;
+  let minutes = null;
+
+  const hasTabs = await page.waitForSelector(TABS_SELECTOR, { timeout: 8000 }).then(
+    () => true,
+    () => false,
+  );
+
+  if (hasTabs) {
+    const tabLinks = await page.$$eval(`${TABS_SELECTOR} a`, (anchors) =>
+      anchors.map((a) => ({ text: (a.textContent || "").trim(), href: a.href || "" })),
+    );
+    decisions = tabLinks.find((l) => l.text === "Decisions") || null;
+    minutes = tabLinks.find((l) => l.text === "Minutes") || null;
+  }
+
+  if (!decisions || !minutes) {
+    const reportLinks = await page.$$eval("a", (anchors) =>
+      anchors
+        .map((a) => ({ text: (a.textContent || "").trim(), href: a.href || "" }))
+        .filter((l) => l.href && l.href.includes("council/report.do?meeting=")),
+    );
+    if (!decisions) {
+      decisions =
+        reportLinks.find((l) => /type=decisions/i.test(l.href)) ||
+        reportLinks.find((l) => /Decisions/i.test(l.text)) ||
+        null;
+    }
+    if (!minutes) {
+      minutes =
+        reportLinks.find((l) => /type=minutes/i.test(l.href)) ||
+        reportLinks.find((l) => /Minutes/i.test(l.text)) ||
+        null;
+    }
+  }
+
+  return { decisions, minutes };
+}
+
+/** Clickable tab/link labels we try when the page is video-first. */
+const CLICK_CANDIDATE_LABELS = [
+  "Minutes",
+  "Decisions",
+  "Agenda",
+  "Video",
+  "Meeting details",
+  "Documents",
+  "View Minutes",
+  "View Decisions",
+];
 
 function sanitizeFilename(name) {
   return name.replace(/[<>:"/\\|?*]+/g, "-").replace(/\s+/g, "_");
@@ -90,43 +158,76 @@ function ensureCleanOutputDir() {
     await page.goto("about:blank");
     await page.goto(meeting.href, { waitUntil: "networkidle" });
 
-    // Try to find Decisions/Minutes tabs first; if that fails (e.g., video or
-    // different layout), fall back to scanning links for report.do?meeting=...
-    let decisions = null;
-    let minutes = null;
+    let { decisions, minutes } = await getDecisionsAndMinutes(page);
 
-    const hasTabs = await page.waitForSelector(TABS_SELECTOR, { timeout: 10000 }).then(
-      () => true,
-      () => false,
-    );
-
-    if (hasTabs) {
-      const tabLinks = await page.$$eval(`${TABS_SELECTOR} a`, (anchors) =>
-        anchors.map((a) => ({ text: a.textContent.trim(), href: a.href })),
-      );
-      decisions = tabLinks.find((l) => l.text === "Decisions") || null;
-      minutes = tabLinks.find((l) => l.text === "Minutes") || null;
+    // Optional: if we have exactly one report URL, derive the other (same meeting, other type).
+    if (decisions && !minutes) {
+      const derived = buildOtherReportUrl(decisions.href, "minutes");
+      if (derived) minutes = { text: "Minutes", href: derived };
+    }
+    if (minutes && !decisions) {
+      const derived = buildOtherReportUrl(minutes.href, "decisions");
+      if (derived) decisions = { text: "Decisions", href: derived };
     }
 
-    // Fallback: some entries may only link to a video or a different view; look
-    // for direct minutes/decisions report links on the page.
-    if (!decisions || !minutes) {
-      const reportLinks = await page.$$eval("a", (anchors) =>
-        anchors
-          .map((a) => ({ text: (a.textContent || "").trim(), href: a.href || "" }))
-          .filter((l) => l.href.includes("council/report.do?meeting=")),
-      );
-      if (!decisions) {
-        decisions =
-          reportLinks.find((l) => /type=decisions/i.test(l.href)) ||
-          reportLinks.find((l) => /Decisions/i.test(l.text)) ||
-          null;
+    // Optional: on suspected video-first page (no tabs and URL has committees/), wait and retry once.
+    if ((!decisions || !minutes) && meeting.href.includes("committees/")) {
+      await page.waitForTimeout(2500);
+      const retry = await getDecisionsAndMinutes(page);
+      if (retry.decisions) decisions = retry.decisions;
+      if (retry.minutes) minutes = retry.minutes;
+      if (decisions && !minutes) {
+        const derived = buildOtherReportUrl(decisions.href, "minutes");
+        if (derived) minutes = { text: "Minutes", href: derived };
       }
-      if (!minutes) {
-        minutes =
-          reportLinks.find((l) => /type=minutes/i.test(l.href)) ||
-          reportLinks.find((l) => /Minutes/i.test(l.text)) ||
-          null;
+      if (minutes && !decisions) {
+        const derived = buildOtherReportUrl(minutes.href, "decisions");
+        if (derived) decisions = { text: "Decisions", href: derived };
+      }
+    }
+
+    // When still missing: click tab-like elements to reveal Minutes/Decisions (video-first pages).
+    if (!decisions || !minutes) {
+      const clickSelectors = "a, button, [role='tab']";
+      const maxClicks = 6;
+      let clicksDone = 0;
+      for (const label of CLICK_CANDIDATE_LABELS) {
+        if (clicksDone >= maxClicks || (decisions && minutes)) break;
+        const elements = await page.$$(clickSelectors);
+        let clicked = false;
+        for (const el of elements) {
+          if (clicked || (decisions && minutes)) break;
+          let text = "";
+          try {
+            text = await el.textContent();
+          } catch {
+            continue;
+          }
+          const trimmed = (text || "").trim();
+          if (!trimmed || !trimmed.toLowerCase().includes(label.toLowerCase())) continue;
+          try {
+            await el.click();
+            clicked = true;
+            clicksDone += 1;
+            await page.waitForTimeout(2500);
+            const after = await getDecisionsAndMinutes(page);
+            if (after.decisions) decisions = after.decisions;
+            if (after.minutes) minutes = after.minutes;
+            if (decisions && !minutes) {
+              const derived = buildOtherReportUrl(decisions.href, "minutes");
+              if (derived) minutes = { text: "Minutes", href: derived };
+            }
+            if (minutes && !decisions) {
+              const derived = buildOtherReportUrl(minutes.href, "decisions");
+              if (derived) decisions = { text: "Decisions", href: derived };
+            }
+          } catch {
+            // Stale or not clickable; continue to next candidate
+          }
+        }
+      }
+      if (decisions || minutes) {
+        console.log("   Resolved after click navigation.");
       }
     }
 

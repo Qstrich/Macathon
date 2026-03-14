@@ -78,7 +78,7 @@ def load_scraped_from_disk() -> Optional[List[ScrapedMeetingFiles]]:
         return None
 
 
-def run_node_scraper(timeout_seconds: int = 180) -> List[ScrapedMeetingFiles]:
+def run_node_scraper(timeout_seconds: int = 360) -> List[ScrapedMeetingFiles]:
     """
     Run the Node Playwright scraper (`scrape-content.js`) and return structured results.
 

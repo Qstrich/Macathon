@@ -186,50 +186,7 @@ function ensureCleanOutputDir() {
       }
     }
 
-    // When still missing: click tab-like elements to reveal Minutes/Decisions (video-first pages).
-    if (!decisions || !minutes) {
-      const clickSelectors = "a, button, [role='tab']";
-      const maxClicks = 6;
-      let clicksDone = 0;
-      for (const label of CLICK_CANDIDATE_LABELS) {
-        if (clicksDone >= maxClicks || (decisions && minutes)) break;
-        const elements = await page.$$(clickSelectors);
-        let clicked = false;
-        for (const el of elements) {
-          if (clicked || (decisions && minutes)) break;
-          let text = "";
-          try {
-            text = await el.textContent();
-          } catch {
-            continue;
-          }
-          const trimmed = (text || "").trim();
-          if (!trimmed || !trimmed.toLowerCase().includes(label.toLowerCase())) continue;
-          try {
-            await el.click();
-            clicked = true;
-            clicksDone += 1;
-            await page.waitForTimeout(2500);
-            const after = await getDecisionsAndMinutes(page);
-            if (after.decisions) decisions = after.decisions;
-            if (after.minutes) minutes = after.minutes;
-            if (decisions && !minutes) {
-              const derived = buildOtherReportUrl(decisions.href, "minutes");
-              if (derived) minutes = { text: "Minutes", href: derived };
-            }
-            if (minutes && !decisions) {
-              const derived = buildOtherReportUrl(minutes.href, "decisions");
-              if (derived) decisions = { text: "Decisions", href: derived };
-            }
-          } catch {
-            // Stale or not clickable; continue to next candidate
-          }
-        }
-      }
-      if (decisions || minutes) {
-        console.log("   Resolved after click navigation.");
-      }
-    }
+    // If we still don't have both URLs here, we proceed with whatever we have.
 
     const targets = [
       decisions && { type: "Decisions", href: decisions.href },
@@ -246,6 +203,53 @@ function ensureCleanOutputDir() {
         minutes: null,
       },
     };
+
+    // Fallback for meetings (often video-first) with no minutes/decisions links:
+    // try to aggregate all agenda-item pages (e.g. 2026.EX29.1, 2026.EX29.2, ...).
+    if (targets.length === 0 && meeting.href.includes("/committees/")) {
+      console.log("   No Decisions/Minutes links; falling back to agenda items...");
+      const agendaLinks = await page.$$eval("a", (anchors) =>
+        anchors
+          .map((a) => ({ text: (a.textContent || "").trim(), href: a.href || "" }))
+          .filter((l) => l.href && l.href.includes("agenda-item.do?item=")),
+      );
+
+      if (agendaLinks.length) {
+        // Limit to a reasonable number of items to avoid timeouts.
+        const maxItems = 40;
+        const subset = agendaLinks.slice(0, maxItems);
+        const parts = [];
+        for (const item of subset) {
+          try {
+            console.log(`   Fetching agenda item: ${item.text || item.href} ...`);
+            const itemPage = await context.newPage();
+            await itemPage.goto(item.href, { waitUntil: "networkidle" });
+            const bodyText = await itemPage.$eval("body", (el) => el.innerText);
+            await itemPage.close();
+            parts.push(`=== ${item.text || item.href} ===\n\n${bodyText}`);
+          } catch (err) {
+            console.log("   Failed to fetch agenda item:", item.href, String(err).slice(0, 200));
+          }
+        }
+
+        if (parts.length) {
+          const combined = parts.join("\n\n\n");
+          const filename = `${sanitizeFilename(meeting.text)}_AgendaItems.txt`;
+          const filepath = path.join(OUTPUT_DIR, filename);
+          fs.writeFileSync(filepath, combined, "utf-8");
+          console.log(`   Saved aggregated agenda items -> ${filename}`);
+          meetingEntry.files.minutes = filename;
+          // Keep minutesUrl null here; backend already has source_url from cache.
+          index.push(meetingEntry);
+          console.log();
+          continue;
+        }
+      }
+
+      console.log("   No Decisions/Minutes or agenda-item pages found, skipping.\n");
+      index.push(meetingEntry);
+      continue;
+    }
 
     if (targets.length === 0) {
       console.log("   No Decisions/Minutes links, skipping.\n");

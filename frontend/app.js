@@ -47,7 +47,9 @@ let statsCache = null;
 function getDisplayTitle(title) {
   if (!title) return '';
   const m = title.match(/^(\d{4}-\d{2}-\d{2})\s*-\s*(.+)$/);
-  return m ? m[2] : title;
+  let display = m ? m[2] : title;
+  display = display.replace(/\s*-\s*Meeting\s+number\s+\d+$/i, '');
+  return display;
 }
 
 // Show admin actions only when URL has ?admin=1 and we're using the API (not Supabase-only)

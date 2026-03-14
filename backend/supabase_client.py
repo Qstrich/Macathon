@@ -81,6 +81,18 @@ def get_meeting_detail(meeting_code: str) -> Optional[MeetingDetail]:
         return None
 
 
+def delete_stale_meetings(valid_codes: List[str]) -> int:
+    """Delete meetings from Supabase that are not in the current valid set."""
+    client = _get_client()
+    resp = client.table("meetings").select("meeting_code").execute()
+    all_codes = {row["meeting_code"] for row in (resp.data or [])}
+    stale = all_codes - set(valid_codes)
+    for code in stale:
+        client.table("meeting_details").delete().eq("meeting_code", code).execute()
+        client.table("meetings").delete().eq("meeting_code", code).execute()
+    return len(stale)
+
+
 def save_meeting_detail(detail: MeetingDetail) -> None:
     """Upsert a MeetingDetail into Supabase."""
     client = _get_client()

@@ -62,14 +62,22 @@ function ensureCleanOutputDir() {
     console.log(`[link ${idx}] text="${l.text}" href="${l.href}"`);
   });
 
-  // Then, select only links that look like meetings.
+  // Then, select only links that look like real meetings.
   const meetingLinks = allLinks.filter((link) => {
     const { href, text } = link;
     if (!text) return false;
     const isCommitteeLink = href.includes("/committees/");
     const isMeetingLanding = href.includes("council/meeting.do");
     const isReport = href.includes("council/report.do?meeting=");
-    return isCommitteeLink || isMeetingLanding || isReport;
+    if (!isCommitteeLink && !isMeetingLanding && !isReport) return false;
+
+    // Skip "Video Archive" links (duplicates of real meeting entries with ;video=true)
+    if (/Video Archive/i.test(text)) return false;
+    // Skip non-meeting pages
+    if (/^e-Updates$/i.test(text)) return false;
+    if (/Registry of Declared Interests/i.test(text)) return false;
+
+    return true;
   });
 
   console.log(`\nFound ${meetingLinks.length} meeting links.\n`);

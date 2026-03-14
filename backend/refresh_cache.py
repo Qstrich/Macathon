@@ -22,6 +22,7 @@ from . import main as backend_main
 from .extractor import build_meeting_detail_from_scraped
 from .scraper_bridge import ScrapedMeetingFiles, run_node_scraper
 from .supabase_client import (
+  delete_stale_meetings as sb_delete_stale_meetings,
   is_configured as supabase_is_configured,
   save_meeting_detail as sb_save_meeting_detail,
   save_meetings_index as sb_save_meetings_index,
@@ -104,6 +105,14 @@ def refresh_cache(overviews_only: bool = False, max_meetings: int | None = None)
       logger.info("Mirrored updated meeting overviews (with topics/counts) to Supabase.")
     except Exception as exc:  # noqa: BLE001
       logger.warning("Failed to mirror updated meeting overviews to Supabase: %s", exc)
+
+    try:
+      valid_codes = list(code_to_overview.keys())
+      deleted = sb_delete_stale_meetings(valid_codes)
+      if deleted:
+        logger.info("Deleted %d stale meetings from Supabase.", deleted)
+    except Exception as exc:  # noqa: BLE001
+      logger.warning("Failed to delete stale meetings from Supabase: %s", exc)
 
 
 def main() -> None:

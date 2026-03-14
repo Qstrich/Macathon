@@ -144,24 +144,75 @@ function ensureCleanOutputDir() {
       continue;
     }
 
+    // Fetch all target pages first so we can resolve "Video Archive" / generic labels from minutes.
+    const fetched = [];
     for (const target of targets) {
       console.log(`   Fetching ${target.type}...`);
-
       const contentPage = await context.newPage();
       await contentPage.goto(target.href, { waitUntil: "networkidle" });
       const textContent = await contentPage.$eval("body", (el) => el.innerText);
       await contentPage.close();
+      fetched.push({ type: target.type, href: target.href, textContent });
+    }
 
-      const filename = `${sanitizeFilename(meeting.text)}_${target.type}.txt`;
+    const minutesContent = fetched.find((f) => f.type === "Minutes")?.textContent || null;
+    const decisionsContent = fetched.find((f) => f.type === "Decisions")?.textContent || null;
+    const contentToParse = minutesContent || decisionsContent;
+
+    function parseMeetingDate(text) {
+      const match = text.match(/Meeting\s+Date:\s*(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+(\w+)\s+(\d{1,2}),\s+(\d{4})/i);
+      if (match) {
+        const months = { January: "01", February: "02", March: "03", April: "04", May: "05", June: "06", July: "07", August: "08", September: "09", October: "10", November: "11", December: "12" };
+        const month = months[match[1]] || "01";
+        const day = match[2].padStart(2, "0");
+        return `${match[3]}-${month}-${day}`;
+      }
+      return null;
+    }
+
+    function parseTitleAndDate(content) {
+      const lines = content.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+      const firstLine = lines[0] || "";
+      const docType = minutesContent ? "Minutes" : "Decisions";
+      let date = null;
+      let committeeName = null;
+      let meetingNum = null;
+
+      const headerMatch = firstLine.match(/^(\d{4}-\d{2}-\d{2})\s+(?:Minutes|Decisions)\s*-\s*(.+)$/);
+      if (headerMatch) {
+        date = headerMatch[1];
+        committeeName = headerMatch[2];
+      }
+      if (!date) date = parseMeetingDate(content);
+      const meetingNoMatch = content.match(/Meeting\s+No\.?:\s*(\d+)/i);
+      if (meetingNoMatch) meetingNum = meetingNoMatch[1];
+      if (!committeeName) {
+        const h2Match = content.match(/^#+\s*(.+)$/m);
+        if (h2Match) committeeName = h2Match[1].replace(/\s*To be Confirmed\s*/i, "").trim();
+      }
+      if (date && committeeName) {
+        return meetingNum
+          ? `${date} - ${committeeName} - Meeting number ${meetingNum}`
+          : `${date} - ${committeeName}`;
+      }
+      return null;
+    }
+
+    if (contentToParse) {
+      const resolved = parseTitleAndDate(contentToParse);
+      if (resolved) {
+        meetingEntry.meetingText = resolved;
+        console.log(`   Title/date from document: ${meetingEntry.meetingText}`);
+      }
+    }
+
+    for (const { type, textContent } of fetched) {
+      const filename = `${sanitizeFilename(meetingEntry.meetingText)}_${type}.txt`;
       const filepath = path.join(OUTPUT_DIR, filename);
       fs.writeFileSync(filepath, textContent, "utf-8");
       console.log(`   Saved -> ${filename}`);
-
-      if (target.type === "Decisions") {
-        meetingEntry.files.decisions = filename;
-      } else if (target.type === "Minutes") {
-        meetingEntry.files.minutes = filename;
-      }
+      if (type === "Decisions") meetingEntry.files.decisions = filename;
+      else if (type === "Minutes") meetingEntry.files.minutes = filename;
     }
 
     index.push(meetingEntry);

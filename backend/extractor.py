@@ -158,10 +158,17 @@ CRITICAL RULE: Your output must be STRICTLY a valid JSON array matching the exac
 
 ### HOW TO FIND THE ITEMS (STRICT ENFORCEMENT):
 1. THE HARD STOP: Read the document top to bottom, but STOP reading entirely the moment you see "Source: Toronto City Clerk" or "Select Language". Everything after this is website boilerplate. Do not let it truncate your output.
-2. THE TRIGGER: Scan the text for Official Item Codes. These always look like 2-3 uppercase letters, a number, a decimal, and another number (Examples: DB14.1, RA24.2, HP4.1).
+2. THE TRIGGER: Scan the text for Official Item Codes. These always look like 2-3 uppercase letters, a number, a decimal, and another number (Examples: DB14.1, RA24.2, HP4.1, PB41.1).
 3. THE RULE: For EVERY SINGLE Official Item Code you find, you MUST create exactly one JSON object in your output array. 
 4. DO NOT OVERTHINK IT: Do not evaluate whether an item seems "trivial", "procedural", or is just a "Report" or "By-law". If it has an Official Item Code, it is substantive by definition. You MUST extract it. No exceptions.
 5. IGNORE UNCODED TEXT: Procedural motions at the bottom (like "Motion to Adopt Minutes") do not have Item Codes. Skip them entirely.
+
+### SUMMARY QUALITY (IMPORTANT):
+- Write for a general audience: avoid jargon (e.g. say "heritage designation" not "Part IV, Section 29" unless the exact law matters).
+- Be specific: include dollar amounts, addresses, ward numbers, and key dates when they appear in the source.
+- Answer: What was decided? Who or what is affected? What happens next (if stated)?
+- For "Received for information" items: explain what the report or update was about and why it matters to residents.
+- Keep titles clear and descriptive; include the item code and a short headline (e.g. "PB41.1 - 817 Mount Pleasant Road - Heritage designation").
 
 ### STATUS MAPPING:
 - "PASSED": Adopted, enacted, carried, approved.
@@ -173,12 +180,12 @@ CRITICAL RULE: Your output must be STRICTLY a valid JSON array matching the exac
 ### OUTPUT FORMAT:
 [
   {
-    "title": "<Include the Item Code and the short headline, e.g., 'RA24.1 - Chief Executive Officer’s Report'>",
-    "summary": "<2-4 sentences explaining exactly what was decided. Be specific about money, locations, or key actions.>",
+    "title": "<Item code and short headline, e.g., 'PB41.1 - 817 Mount Pleasant Road - Heritage designation'>",
+    "summary": "<2-4 sentences in plain language: what was decided, who/what is affected, key details (money, location, dates). Avoid jargon.>",
     "status": "<MUST be one of: PASSED, FAILED, DEFERRED, AMENDED, RECEIVED>",
     "category": "<MUST be one of: housing, transportation, budget, environment, services, governance, other>",
     "impact_tags": [
-      "<Tag 1>",
+      "<Who or what is affected, e.g. heritage, Don Valley West>",
       "<Tag 2>"
     ],
     "full_text": "<The key part of the decision text copied verbatim from the source>"

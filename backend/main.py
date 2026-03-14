@@ -83,11 +83,39 @@ def _slugify(text: str) -> str:
   )
 
 
-def _derive_meeting_code(meeting_text: str, fallback_index: int) -> str:
-  # Try to extract explicit meeting code like 2026.CC04
+def _meeting_code_from_report_url(url: Optional[str]) -> Optional[str]:
+  """Extract meeting code from report URL, e.g. report.do?meeting=2026.PB41 -> 2026.PB41."""
+  if not url:
+    return None
+  import re
+  m = re.search(r"[?&]meeting=([^&\s]+)", url)
+  return m.group(1) if m else None
+
+
+def _is_generic_meeting_label(text: str) -> bool:
+  """True if the meeting label looks generic (e.g. Video Archive) and not a real title."""
+  import re
+  t = (text or "").strip()
+  if not t or len(t) < 15:
+    return True
+  if re.match(r"^(Video Archive|Video|e-Updates|Registry of Declared Interests)$", t, re.I):
+    return True
+  if not re.search(r"\d{4}", t):
+    return True
+  return False
+
+
+def _derive_meeting_code(meeting_text: str, fallback_index: int, minutes_url: Optional[str] = None, decisions_url: Optional[str] = None) -> str:
   import re
 
-  match = re.search(r"\b(20[2-4]\d\.CC\d+)\b", meeting_text)
+  # When the scraper label was generic (e.g. Video Archive), use official code from report URL if present.
+  if _is_generic_meeting_label(meeting_text):
+    code = _meeting_code_from_report_url(minutes_url) or _meeting_code_from_report_url(decisions_url)
+    if code:
+      return code
+
+  # Try to extract explicit meeting code like 2026.CC04 from text
+  match = re.search(r"\b(20[2-4]\d\.[A-Z]+\d+)\b", meeting_text)
   if match:
     return match.group(1)
 
@@ -96,32 +124,82 @@ def _derive_meeting_code(meeting_text: str, fallback_index: int) -> str:
   return f"{slug or 'meeting'}_{fallback_index:02d}"
 
 
+def _parse_title_date_from_document(path: Optional[Path]) -> tuple[Optional[str], Optional[str]]:
+  """Read minutes or decisions file and parse first lines for title and date. Returns (title, date_str) or (None, None)."""
+  if not path or not path.exists():
+    return None, None
+  import re
+  try:
+    text = path.read_text(encoding="utf-8", errors="ignore")
+  except Exception:
+    return None, None
+  lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+  first = lines[0] if lines else ""
+  date_str: Optional[str] = None
+  committee: Optional[str] = None
+  meeting_num: Optional[str] = None
+  header = re.match(r"^(\d{4}-\d{2}-\d{2})\s+(?:Minutes|Decisions)\s*-\s*(.+)$", first)
+  if header:
+    date_str = header.group(1)
+    committee = header.group(2)
+  if not date_str:
+    meeting_date = re.search(
+      r"Meeting\s+Date:\s*(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+(\w+)\s+(\d{1,2}),\s+(\d{4})",
+      text,
+      re.I,
+    )
+    if meeting_date:
+      months = {"January": "01", "February": "02", "March": "03", "April": "04", "May": "05", "June": "06",
+                "July": "07", "August": "08", "September": "09", "October": "10", "November": "11", "December": "12"}
+      date_str = f"{meeting_date.group(3)}-{months.get(meeting_date.group(1), '01')}-{meeting_date.group(2).zfill(2)}"
+  if not committee:
+    h2 = re.search(r"^#+\s*(.+)$", text, re.M)
+    if h2:
+      committee = re.sub(r"\s*To be Confirmed\s*", "", h2.group(1), flags=re.I).strip()
+  meeting_no = re.search(r"Meeting\s+No\.?:\s*(\d+)", text, re.I)
+  if meeting_no:
+    meeting_num = meeting_no.group(1)
+  if date_str and committee:
+    title = f"{date_str} - {committee} - Meeting number {meeting_num}" if meeting_num else f"{date_str} - {committee}"
+    return title, date_str
+  return None, None
+
+
 def _build_meeting_overviews(scraped: List[ScrapedMeetingFiles]) -> List[MeetingOverview]:
   overviews: List[MeetingOverview] = []
 
   for idx, m in enumerate(scraped, start=1):
-    code = _derive_meeting_code(m.meeting_text, idx)
-
-    # Extract a date string from the meeting text
     import re
-
-    # Primary: ISO date at the start, e.g. 2026-02-18 - North York Community Council...
-    iso_match = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\b", m.meeting_text.strip())
-    if iso_match:
-      date_str = iso_match.group("date")
-    else:
-      # Fallback: month-name formats somewhere in the text
-      date_match = re.search(
-        r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+20\d{2}\b",
-        m.meeting_text,
-      )
-      if date_match:
-        date_str = date_match.group(0)
-      else:
-        date_str = "Unknown date"
-
-    # Simple region / committee detection based on title
     title = m.meeting_text
+    date_str: Optional[str] = None
+
+    # Prefer title and date parsed from minutes/decisions file when current label is generic or missing date
+    if _is_generic_meeting_label(m.meeting_text) or not re.search(r"\d{4}-\d{2}-\d{2}", m.meeting_text):
+      doc_path = m.minutes_file or m.decisions_file
+      parsed_title, parsed_date = _parse_title_date_from_document(doc_path)
+      if parsed_title:
+        title = parsed_title
+      if parsed_date:
+        date_str = parsed_date
+
+    if date_str is None:
+      iso_match = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\b", title.strip())
+      if iso_match:
+        date_str = iso_match.group("date")
+      else:
+        date_match = re.search(
+          r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+20\d{2}\b",
+          title,
+        )
+        date_str = date_match.group(0) if date_match else "Unknown date"
+    if date_str == "Unknown date" and (m.minutes_file or m.decisions_file):
+      _, parsed_date = _parse_title_date_from_document(m.minutes_file or m.decisions_file)
+      if parsed_date:
+        date_str = parsed_date
+
+    if date_str is None:
+      date_str = "Unknown date"
+    code = _derive_meeting_code(title, idx, m.minutes_url, m.decisions_url)
     region: Optional[str]
     if "North York Community Council" in title:
       region = "North York"
@@ -273,7 +351,7 @@ async def debug_meeting_codes() -> dict:
     return {"source": "cache", "count": len(codes), "meeting_codes": codes}
   scraped = load_scraped_from_disk()
   if scraped:
-    codes = [_derive_meeting_code(m.meeting_text, idx) for idx, m in enumerate(scraped, start=1)]
+    codes = [_derive_meeting_code(m.meeting_text, idx, m.minutes_url, m.decisions_url) for idx, m in enumerate(scraped, start=1)]
     return {"source": "disk", "count": len(codes), "meeting_codes": codes}
   return {"source": "none", "count": 0, "meeting_codes": []}
 
@@ -401,7 +479,7 @@ async def list_meetings() -> List[MeetingOverview]:
 
 def _find_scraped_for_code(meeting_code: str, scraped: List[ScrapedMeetingFiles]) -> ScrapedMeetingFiles | None:
   for idx, m in enumerate(scraped, start=1):
-    if _derive_meeting_code(m.meeting_text, idx) == meeting_code:
+    if _derive_meeting_code(m.meeting_text, idx, m.minutes_url, m.decisions_url) == meeting_code:
       return m
   return None
 
@@ -530,7 +608,7 @@ async def prewarm_all() -> PrewarmResponse:
   prewarmed = 0
   code_to_overview = {m.meeting_code: m for m in overviews}
   for idx, raw in enumerate(scraped, start=1):
-    meeting_code = _derive_meeting_code(raw.meeting_text, idx)
+    meeting_code = _derive_meeting_code(raw.meeting_text, idx, raw.minutes_url, raw.decisions_url)
     if _load_meeting_detail(meeting_code):
       continue
     overview = code_to_overview.get(

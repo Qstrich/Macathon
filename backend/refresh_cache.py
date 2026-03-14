@@ -72,7 +72,7 @@ def refresh_cache(overviews_only: bool = False, max_meetings: int | None = None)
   code_to_overview = {m.meeting_code: m for m in overviews}
 
   for idx, raw in enumerate(scraped, start=1):
-    meeting_code = _derive_meeting_code(raw.meeting_text, idx)
+    meeting_code = _derive_meeting_code(raw.meeting_text, idx, raw.minutes_url, raw.decisions_url)
     overview = code_to_overview.get(
       meeting_code,
       backend_main.MeetingOverview(  # type: ignore[attr-defined]

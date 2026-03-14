@@ -48,28 +48,29 @@ function ensureCleanOutputDir() {
   // Give Angular time to render the SPA (longer in CI)
   await page.waitForTimeout(15000);
 
-  // The Toronto highlights page layout is brittle and the old selector
-  // `.recent-meetings-table` is not always present in CI. Instead of depending
-  // on that table, collect meeting links by URL pattern and text.
-  const meetingLinks = await page.$$eval("a", (anchors) =>
-    anchors
-      .filter((a) => {
-        const href = a.href || "";
-        const text = (a.textContent || "").trim();
-        // Accept:
-        // - highlights links (council/#/committees/...)
-        // - meeting landing pages (council/meeting.do)
-        // - direct report pages (council/report.do?meeting=...)
-        const isHighlightsLink =
-          href.includes("/council/#/committees/") || href.includes("#/committees/");
-        const isMeetingLanding = href.includes("council/meeting.do");
-        const isReport = href.includes("council/report.do?meeting=");
-        if (!isHighlightsLink && !isMeetingLanding && !isReport) return false;
-        if (!text) return false;
-        return true;
-      })
-      .map((a) => ({ text: a.textContent.trim(), href: a.href }))
+  // The Toronto highlights page layout is brittle and behaves differently in CI.
+  // First, log a sample of all anchors so we can see what the page actually
+  // looks like in GitHub Actions.
+  const allLinks = await page.$$eval("a", (anchors) =>
+    anchors.map((a) => ({
+      text: (a.textContent || "").trim(),
+      href: a.href || "",
+    })),
   );
+  console.log(`Found ${allLinks.length} total <a> elements on highlights page.`);
+  allLinks.slice(0, 40).forEach((l, idx) => {
+    console.log(`[link ${idx}] text="${l.text}" href="${l.href}"`);
+  });
+
+  // Then, select only links that look like meetings.
+  const meetingLinks = allLinks.filter((link) => {
+    const { href, text } = link;
+    if (!text) return false;
+    const isCommitteeLink = href.includes("/committees/");
+    const isMeetingLanding = href.includes("council/meeting.do");
+    const isReport = href.includes("council/report.do?meeting=");
+    return isCommitteeLink || isMeetingLanding || isReport;
+  });
 
   console.log(`\nFound ${meetingLinks.length} meeting links.\n`);
 

@@ -8,22 +8,19 @@ Usage (from project root, with venv activated):
   python -m backend.refresh_cache
 
 This will:
-- Ensure environment variables are loaded.
-- Load scraper output (or run the scraper once if needed).
-- Build MeetingOverview cache (meetings_index.json).
-- Build MeetingDetail cache for each meeting (data/cache/meetings/*.json)
-  using the current extraction pipeline.
+- Run the Node scraper to fetch the latest meetings from the council site.
+- Build MeetingOverview and MeetingDetail (with Gemini extraction) and write
+  to data/cache and, if configured, to Supabase (meetings + meeting_details).
 """
 
 import logging
-import os
 import argparse
 from pathlib import Path
 from typing import List
 
 from . import main as backend_main
 from .extractor import build_meeting_detail_from_scraped
-from .scraper_bridge import ScrapedMeetingFiles, load_scraped_from_disk, run_node_scraper
+from .scraper_bridge import ScrapedMeetingFiles, run_node_scraper
 from .supabase_client import (
   is_configured as supabase_is_configured,
   save_meeting_detail as sb_save_meeting_detail,
@@ -35,25 +32,8 @@ logger = logging.getLogger("refresh_cache")
 
 
 def _load_or_scrape() -> List[ScrapedMeetingFiles]:
-  """Load scraper output, or run the scraper once if needed.
-
-  Set FORCE_SCRAPE=true in the environment to always re-run the Node scraper,
-  even when existing output is present. This is useful after changing the
-  scraper or when you want to refresh meetings from the live site.
-  """
-  force = os.getenv("FORCE_SCRAPE", "false").lower() in {"1", "true", "yes"}
-
-  if not force:
-    scraped = load_scraped_from_disk()
-    if scraped:
-      logger.info("Loaded %d meetings from existing scraper output.", len(scraped))
-      return scraped
-
-  if force:
-    logger.info("FORCE_SCRAPE is set; running Node scraper to refresh output...")
-  else:
-    logger.info("No scraper output found; running Node scraper once...")
-
+  """Always run the Node scraper to get the latest meetings from the council site."""
+  logger.info("Running Node scraper to refresh meeting list...")
   scraped = run_node_scraper()
   logger.info("Scraper produced %d meetings.", len(scraped))
   return scraped

@@ -191,6 +191,22 @@ function ensureCleanOutputDir() {
 
   console.log(`\nFound ${meetingLinks.length} meeting links.\n`);
 
+  function parseDateFromMeetingText(text) {
+    if (!text) return null;
+    const m = text.match(/^(\d{4}-\d{2}-\d{2})\b/);
+    return m ? m[1] : null;
+  }
+
+  function isFutureDateISO(dateStr) {
+    if (!dateStr) return false;
+    const [year, month, day] = dateStr.split("-").map((n) => parseInt(n, 10));
+    if (!year || !month || !day) return false;
+    const meetingDate = new Date(Date.UTC(year, month - 1, day));
+    const now = new Date();
+    const todayUtc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    return meetingDate > todayUtc;
+  }
+
   const index = [];
 
   for (const meeting of meetingLinks) {
@@ -244,6 +260,12 @@ function ensureCleanOutputDir() {
         minutes: null,
       },
     };
+
+    const isoDateFromTitle = parseDateFromMeetingText(meetingEntry.meetingText);
+    if (isoDateFromTitle && isFutureDateISO(isoDateFromTitle)) {
+      console.log(`   Skipping future meeting from highlights list (${isoDateFromTitle}).\n`);
+      continue;
+    }
 
     // Fallback for meetings (often video-first) with no minutes/decisions links:
     // try to aggregate all agenda-item pages (e.g. 2026.EX29.1, 2026.EX29.2, ...).
